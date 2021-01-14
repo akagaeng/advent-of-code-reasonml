@@ -1,6 +1,6 @@
-# advent-of-code-reasonml
+# advent-of-code-rescript
 
-> Advent of Code in ReasonML
+> Advent of Code in ReScript
 
 ## Advent of Code 2020
 * 50 stars를 12/25까지 찾아야 한다
