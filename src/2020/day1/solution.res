@@ -1,15 +1,15 @@
-let input = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
-let inputsStr = Js.String.split("\n", input)
-let inputsOptionInt = Belt.Array.map(inputsStr, v => Belt.Int.fromString(v))
-let inputsInt = Belt.Array.map(inputsOptionInt, v => Belt.Option.getExn(v))
+let inputStr = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
+let inputs = Js.String.split("\n", inputStr)
+                        -> Belt.Array.map(i => Belt.Int.fromString(i))
+                        -> Belt.Array.map(o => Belt.Option.getExn(o))
 
-let idxMax = Belt.Array.length(inputsInt) - 1
+let idxMax = Belt.Array.length(inputs) - 1
 
 // Part One
 for i in 0 to idxMax {
   for j in i + 1 to idxMax - i {
-    let x = inputsInt[i]
-    let y = inputsInt[j]
+    let x = inputs[i]
+    let y = inputs[j]
     let sum = x + y
 
     if sum === 2020 {
@@ -23,9 +23,9 @@ for i in 0 to idxMax {
 for i in 0 to idxMax {
   for j in i + 1 to idxMax - i {
     for k in j + 1 to idxMax - j {
-      let x = inputsInt[i]
-      let y = inputsInt[j]
-      let z = inputsInt[k]
+      let x = inputs[i]
+      let y = inputs[j]
+      let z = inputs[k]
       let sum = x + y + z
 
       if sum === 2020 {
