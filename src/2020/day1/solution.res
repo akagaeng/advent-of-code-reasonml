@@ -10,7 +10,7 @@ for i in 0 to idxMax {
   for j in i + 1 to idxMax - i {
     let x = inputsInt[i]
     let y = inputsInt[j]
-    let sum = inputsInt[i] + inputsInt[j]
+    let sum = x + y
 
     if sum === 2020 {
       let mul = x * y
@@ -26,7 +26,7 @@ for i in 0 to idxMax {
       let x = inputsInt[i]
       let y = inputsInt[j]
       let z = inputsInt[k]
-      let sum = inputsInt[i] + inputsInt[j] + inputsInt[k]
+      let sum = x + y + z
 
       if sum === 2020 {
         let mul = x * y * z
