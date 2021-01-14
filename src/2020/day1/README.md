@@ -2,9 +2,10 @@
 
 ## Versions
 
-* Initial version
+* [Initial version](#initial-version)
   * Using for loop
-
+* Refactor
+  * [Input with pipe](#input-with-pipe)
 ## Initial version
 
 ```reasonml
@@ -46,4 +47,13 @@ for i in 0 to idxMax {
   }
 }
 
+```
+
+## Input with pipe
+
+```reasonml
+let inputStr = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
+let inputs = Js.String.split("\n", inputStr)
+                        -> Belt.Array.map(i => Belt.Int.fromString(i))
+                        -> Belt.Array.map(o => Belt.Option.getExn(o))
 ```
