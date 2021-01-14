@@ -7,7 +7,7 @@
 
 ## Initial version
 
-```
+```reasonml
 let input = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
 let inputsStr = Js.String.split("\n", input)
 let inputsOptionInt = Belt.Array.map(inputsStr, (v) => Belt.Int.fromString(v))
