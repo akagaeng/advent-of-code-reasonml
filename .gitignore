@@ -1,2 +1,8 @@
 .idea
 .vscode
+node_modules
+
+# ReasonML
+.merlin
+lib
+*.bs.js
