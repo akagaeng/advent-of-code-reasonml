@@ -1,7 +1,8 @@
 let inputStr = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
-let inputs = Js.String.split("\n", inputStr)
-                        -> Belt.Array.map(i => Belt.Int.fromString(i))
-                        -> Belt.Array.map(o => Belt.Option.getExn(o))
+let inputs =
+  Js.String.split("\n", inputStr)
+  ->Belt.Array.map(i => Belt.Int.fromString(i))
+  ->Belt.Array.map(o => Belt.Option.getExn(o))
 
 let idxMax = Belt.Array.length(inputs) - 1
 
