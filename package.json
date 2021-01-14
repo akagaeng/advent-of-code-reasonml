@@ -1,0 +1,14 @@
+{
+  "name": "advent-of-code-reasonml",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "npx bsb -make-world",
+    "dev": "npx bsb -make-world -w",
+    "clean": "npx bsb -clean-world"
+  },
+  "devDependencies": {
+    "bs-platform": "^8.4.2",
+    "nodemon": "^2.0.7"
+  }
+}
