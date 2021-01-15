@@ -6,10 +6,11 @@
   * Using for loop
 * Refactor
   * [Input with pipe](#input-with-pipe)
+  * [Input with pipe more](#input-with-pipe-more)
 ## Initial version
 
 ```reasonml
-let input = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
+let input = Node.Fs.readFileAsUtf8Sync("./input.txt")
 let inputsStr = Js.String.split("\n", input)
 let inputsOptionInt = Belt.Array.map(inputsStr, v => Belt.Int.fromString(v))
 let inputsInt = Belt.Array.map(inputsOptionInt, v => Belt.Option.getExn(v))
@@ -52,9 +53,18 @@ for i in 0 to idxMax {
 ## Input with pipe
 
 ```reasonml
-let inputStr = Node.Fs.readFileAsUtf8Sync("src/2020/day1/input.txt")
+let inputStr = Node.Fs.readFileAsUtf8Sync("./input.txt")
 let inputs =
   Js.String.split("\n", inputStr)
+  ->Belt.Array.map(i => Belt.Int.fromString(i))
+  ->Belt.Array.map(o => Belt.Option.getExn(o))
+```
+
+## Input with pipe more
+```reasonml
+let inputs =
+  Node.Fs.readFileAsUtf8Sync("./input.txt")
+  ->Js.String2.split("\n")
   ->Belt.Array.map(i => Belt.Int.fromString(i))
   ->Belt.Array.map(o => Belt.Option.getExn(o))
 ```
