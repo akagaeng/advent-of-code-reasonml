@@ -6,8 +6,10 @@
   * Using for loop
 * Refactor
   * [Input with pipe](#input-with-pipe)
-  * [Input with pipe more](#input-with-pipe-more)
-  * [Using index of array](#using-index-of-array)
+  * [Input with pipe more](#input-with-pipe-more): [solution.res](./solution.res)
+  * [Using index of array](#using-index-of-array): [solution2.res](./solution2.res)
+  * [Using only value of array](#using-only-value-of-array): [solution3.res](./solution3.res)
+  * [Using recursion and switch](#using-recursion-and-switch)
   * [Prepared coordinates](#prepared-coordinates)
 ## Initial version
 
@@ -94,6 +96,12 @@ for i in 0 to idxMax {
 ## Using index of array
 * index의 목록을 만든 후에, 이를 map으로 순회하면서 값을 찾음
 * for loop -> map
+
+## Using only value of array
+* value만 이용해서 map으로 순회하며 값 계산
+
+## Using recursion and switch
+* return value to return value, otherwise return function
 
 ## Prepared Coordinates
 
