@@ -7,14 +7,12 @@ let inputs =
   ->Belt.Array.map(o => Belt.Option.getExn(o))
 
 let outX = Belt.Array.map(inputs, x => {
-  let outY =
-    Belt.Array.map(inputs, y => {
-      (x + y, x * y)
-    })
-    ->Belt.Array.keep(((sum, _)) => sum === 2020)
-    ->Belt.Array.map(((_, mul)) => mul)
+  let outY = Belt.Array.map(inputs, y => {
+    (x, y)
+  })->Belt.Array.keep(((x, y)) => x + y === 2020)
   outY
 })->Belt.Array.concatMany
 
-let res1 = outX[0]
+let (resX, resY) = outX[0]
+let res1 = resX * resY
 Js.log(res1)
