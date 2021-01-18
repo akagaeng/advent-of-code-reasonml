@@ -1,3 +1,5 @@
+// map with index
+
 let inputs =
   Node.Fs.readFileAsUtf8Sync("./input.txt")
   ->Js.String2.split("\n")
@@ -7,8 +9,7 @@ let inputs =
 let idxMax = Belt.Array.length(inputs) - 1
 
 // Part One
-let is = Belt.Array.range(0, idxMax)
-let vi = is->Belt.Array.map(i => {
+let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
   let js = Belt.Array.range(i + 1, idxMax)
   js->Belt.Array.map(j => {
     let x = inputs[i]
@@ -23,8 +24,7 @@ let vi = is->Belt.Array.map(i => {
 })
 
 // Part Two
-let is = Belt.Array.range(0, idxMax)
-let vi = is->Belt.Array.map(i => {
+let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
   let js = Belt.Array.range(i + 1, idxMax)
   js->Belt.Array.map(j => {
     let ks = Belt.Array.range(j + 1, idxMax)
