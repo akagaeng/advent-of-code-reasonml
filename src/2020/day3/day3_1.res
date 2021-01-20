@@ -1,6 +1,7 @@
 // array of array
 
 let inputs =
+  // Node.Fs.readFileAsUtf8Sync("./sample.txt")
   Node.Fs.readFileAsUtf8Sync("./input.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.map(arr => arr->Js.String2.split(""))
@@ -33,15 +34,13 @@ let getTrees = (treeInputs, (slopeX, slopeY)) => {
 
 // Part One
 let p1Slope = (3, 1)
-
 let treesP1 = inputs->getTrees(p1Slope)->Belt.Array.reduce(0, (acc, v) => acc + v)->Js.log
 
 // Part Two
 let p2Slopes = [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
 
-let treesP2 = p2Slopes
-->Belt.Array.map(p2Slope => {
-  inputs->getTrees(p2Slope)->Belt.Array.reduce(0, (acc, v) => acc + v)
-})
-->Belt.Array.reduce(1.0, (acc, t) => acc *. Belt.Int.toFloat(t))
-->Js.log
+let treesP2 =
+  p2Slopes
+  ->Belt.Array.map(p2Slope => inputs->getTrees(p2Slope)->Belt.Array.reduce(0, (acc, v) => acc + v))
+  ->Belt.Array.reduce(Belt.Int.toFloat(1), (acc, t) => acc *. Belt.Int.toFloat(t))
+  ->Js.log
