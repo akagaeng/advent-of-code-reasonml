@@ -1,7 +1,6 @@
 // array of array
 
 let inputs =
-  // Node.Fs.readFileAsUtf8Sync("./sample.txt")
   Node.Fs.readFileAsUtf8Sync("./input.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.map(arr => arr->Js.String2.split(""))
