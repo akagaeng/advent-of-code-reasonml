@@ -7,5 +7,3 @@
 * Using only value of array (keep, map): [day1_3.res](./day1_3.res)
 * Using only value of array (keepMap): [day1_4.res](./day1_4.res)
 * Using only value of array (keep, map, tuple): [day1_5.res](./day1_5.res)
-* Using recursion and switch: : [day1_6.res](./day1_6.res)
-* Prepared coordinates
