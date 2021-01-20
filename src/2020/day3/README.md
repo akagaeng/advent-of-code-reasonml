@@ -6,6 +6,8 @@ tree의 수를 구하는 것이므로 계산의 편의를 위해 다음과 같�
 * open square = 0
 
 ## Soultions
-* 2차원 array를 이용하여 풀이
+* 2차원 array를 이용하여 풀이: 
+  * [day3_1.res](./day3_1.res)
+  * Recursive function 활용: [day3_2.res](./day3_2.res)
 * array of dict(k-v)를 이용 
   * 1,3 이동이면 array의 idx +=3, dict key +=3 의 value를 구하면 됨
