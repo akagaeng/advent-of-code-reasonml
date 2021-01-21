@@ -1,12 +1,12 @@
 // array of array
 
-let passports = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n\n")
+let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n\n")
 let fields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"]
 
 // Part One
-let p1RequiredFields = fields->Belt.Array.keep(f => f !== "cid")
+let passportRequiredFields = fields->Belt.Array.keep(f => f !== "cid")
 
-let p1Validator = (dict, keys) => {
+let isPresent = (dict, keys) => {
   let keyFields = Belt.Array.length(keys)
   let validFields = keys
   ->Belt.Array.map(key => {
@@ -25,9 +25,8 @@ let p1Validator = (dict, keys) => {
   }
 }
 
-passports
-->Belt.Array.map(v => {
-  let dict =
+let passports =
+  inputs->Belt.Array.map(v =>
     v
     ->Js.String2.split("\n")
     ->Belt.Array.map(f => f->Js.String2.split(" "))
@@ -35,10 +34,11 @@ passports
     ->Belt.Array.map(s => s->Js.String2.split(":"))
     ->Belt.Array.map(arr => (arr[0], arr[1]))
     ->Belt.Map.String.fromArray
+  )
 
-  let isValid = p1Validator(dict, p1RequiredFields)
-  isValid
-})
+passports
+->Belt.Array.map(v => isPresent(v, passportRequiredFields))
 ->Belt.Array.reduce(0, (a, b) => a + b)
 ->Js.log
 
+// Part two
