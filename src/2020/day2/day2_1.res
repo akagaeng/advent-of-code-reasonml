@@ -2,9 +2,11 @@ let inputs =
   Node.Fs.readFileAsUtf8Sync("./input.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.map(str => {
-    let [nums, letterd, password] = Js.String2.split(str, " ")
-    let [numsMin, numsMax] = Js.String2.split(nums, "-")
-    let [letter, _] = Js.String2.split(letterd, ":")
+    let strArr = str->Js.String2.split(" ")
+    let (nums, letterd, password) = (strArr[0], strArr[1], strArr[2])
+    let numsArr = Js.String2.split(nums, "-")
+    let (numsMin, numsMax) = (numsArr[0], numsArr[1])
+    let letter = Js.String2.split(letterd, ":")[0]
     let min = numsMin->Belt.Int.fromString->Belt.Option.getExn
     let max = numsMax->Belt.Int.fromString->Belt.Option.getExn
     (min, max, letter, password)
