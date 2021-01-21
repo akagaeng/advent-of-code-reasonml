@@ -16,20 +16,21 @@ let passports =
     ->Belt.Map.String.fromArray
   )
 
-let isPresent = (dict, keys) => {
-  let keyFields = Belt.Array.length(keys)
-  let validFields = keys
-  ->Belt.Array.map(key => {
+let checkKeyExists = ((keys, dict)) => {
+  keys->Belt.Array.map(key => {
     let value = dict->Belt.Map.String.get(key)
     switch value {
     | Some(value) => Some(value)
     | _ => None
     }
   })
-  ->Belt.Array.keepMap(o => o)
-  ->Belt.Array.length
+}
 
-  switch keyFields - validFields {
+let isPresent = ((dict, keys)) => {
+  let keyFieldsLen = Belt.Array.length(keys)
+  let validFieldsLen = (keys, dict)->checkKeyExists->Belt.Array.keepMap(o => o)->Belt.Array.length
+
+  switch keyFieldsLen - validFieldsLen {
   | 0 => 1
   | _ => 0
   }
@@ -37,7 +38,7 @@ let isPresent = (dict, keys) => {
 
 // Part One
 passports
-->Belt.Array.map(v => v-> isPresent(passportRequiredFields))
+->Belt.Array.map(v => (v, passportRequiredFields)->isPresent)
 ->Belt.Array.reduce(0, (a, b) => a + b)
 ->Js.log
 
