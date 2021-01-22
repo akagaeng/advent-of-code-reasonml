@@ -9,7 +9,7 @@ let inputs =
 let idxMax = Belt.Array.length(inputs) - 1
 
 // Part One
-let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
+let p1 = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
   let js = Belt.Array.range(i + 1, idxMax)
   js->Belt.Array.map(j => {
     let x = inputs[i]
@@ -24,7 +24,7 @@ let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
 })
 
 // Part Two
-let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
+let p2 = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
   let js = Belt.Array.range(i + 1, idxMax)
   js->Belt.Array.map(j => {
     let ks = Belt.Array.range(j + 1, idxMax)
