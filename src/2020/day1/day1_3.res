@@ -7,7 +7,7 @@ let inputs =
   ->Belt.Array.map(o => Belt.Option.getExn(o))
 
 // Part One
-let out =
+let p1 =
   Belt.Array.map(inputs, x => {
     Belt.Array.map(inputs, y => {
       if x + y === 2020 {
@@ -28,5 +28,29 @@ let out =
   )
   ->Belt.Array.concatMany
 
-let res1 = out[0]
-Js.log(res1)
+Js.log(p1[0])
+
+let p2 = Belt.Array.map(inputs, x => {
+  Belt.Array.map(inputs, y => {
+    Belt.Array.map(inputs, z => {
+      if x + y + z === 2020 {
+        let mul = x * y * z
+        Some(mul)
+      } else {
+        None
+      }
+    })
+  })
+})
+->Belt.Array.concatMany
+->Belt.Array.map(a =>
+  a->Belt.Array.keep(v => {
+    switch v {
+    | Some(_) => true
+    | None => false
+    }
+  })
+)
+->Belt.Array.concatMany
+
+Js.log(p2[0])
