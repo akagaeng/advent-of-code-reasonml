@@ -22,7 +22,6 @@ let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
     }
   })
 })
-Js.log(vi)
 
 // Part Two
 let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
@@ -42,4 +41,3 @@ let vi = Belt.Array.range(0, idxMax)->Belt.Array.map(i => {
     })
   })
 })
-Js.log(vi)
