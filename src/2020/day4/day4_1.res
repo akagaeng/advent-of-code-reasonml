@@ -61,9 +61,7 @@ let regexFilter = ((val, regexp)) => {
   }
 }
 
-let strToInt = str => {
-  str->Belt.Int.fromString->Belt.Option.getWithDefault(-1)
-}
+let strToInt = str => str->Belt.Int.fromString->Belt.Option.getWithDefault(-1)
 
 let validateKeyRegexp = dict => {
   passportRequiredFields->Belt.Array.every(key => {
