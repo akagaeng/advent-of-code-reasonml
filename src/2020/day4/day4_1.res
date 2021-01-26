@@ -1,4 +1,4 @@
-// array of dict
+// return array of boolean
 
 let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n\n")
 let fields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"]
