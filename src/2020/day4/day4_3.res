@@ -21,7 +21,7 @@ type passport_t = {
   hgt: string,
   hcl: string,
   ecl: string,
-  pid: int,
+  pid: string, // NOT int: case where pid starts with 0 (ex: pid:085002665)
   cid: string,
 }
 
@@ -64,7 +64,7 @@ let hgtFilter = ((val, cmMin, cmMax, inMin, inMax)) => {
   }
 }
 
-let regexFilter = ((val, regexp)) => {
+let regexFilter = ((val: string, regexp)) => {
   let matched = Js.String2.match_(val, regexp)
   switch matched {
   | Some(m) => m[0] === val
@@ -79,41 +79,37 @@ let validateKeyPresent = dict => {
   hasSameArrayLength(keys, fields->excludeCid)
 }
 
-let validateKeyMatchesRegexp = dict => {
-  let matchedKeys = fields
-  ->excludeCid
-  ->Belt.Array.map(key => {
-    let val = dict->Belt.Map.String.get(key)->Belt.Option.getWithDefault("")
+let validateKeyMatchesRegexp = (dict: passport_t) => {
+  let isValidated =
+    [
+      rangeFilter((dict.byr, 1920, 2002)),
+      rangeFilter((dict.iyr, 2010, 2020)),
+      rangeFilter((dict.eyr, 2020, 2030)),
+      hgtFilter((dict.hgt, 150, 193, 59, 76)),
+      regexFilter((dict.hcl, %re("/(#)[0-9a-f]{6}/"))),
+      regexFilter((dict.ecl, %re("/(amb|blu|brn|gry|grn|hzl|oth)/"))),
+      regexFilter((dict.pid, %re("/[0-9]{9}/"))),
+    ]->Belt.Array.every(x => x === true)
 
-    switch key {
-    | "byr" => rangeFilter((val->strToInt, 1920, 2002))
-    | "iyr" => rangeFilter((val->strToInt, 2010, 2020))
-    | "eyr" => rangeFilter((val->strToInt, 2020, 2030))
-    | "hgt" => hgtFilter((val, 150, 193, 59, 76))
-    | "hcl" => regexFilter((val, %re("/(#)[0-9a-f]{6}/")))
-    | "ecl" => regexFilter((val, %re("/(amb|blu|brn|gry|grn|hzl|oth)/")))
-    | "pid" => regexFilter((val, %re("/[0-9]{9}/")))
-    | _ => false
-    }
-  })
-  ->Belt.Array.keep(v => v === true)
-
-  hasSameArrayLength(matchedKeys, fields->excludeCid)
+  switch isValidated {
+  | true => Some(dict)
+  | _ => None
+  }
 }
 
-let validate = ((dict, validator)) =>
-  switch validator {
-  | "keyPresent" => (dict, validateKeyPresent(dict))
-  | "KeyMatchesRegexp" => (dict, validateKeyMatchesRegexp(dict))
-  | _ => (dict, false)
-  }->(
-    ((dict, isValidated)) => {
-      switch isValidated {
-      | true => Some(dict)
-      | false => None
-      }
-    }
-  )
+// let validate = ((dict: passport_t, validator)) =>
+//   switch validator {
+//   | "keyPresent" => (dict, validateKeyPresent(dict))
+//   | "KeyMatchesRegexp" => (dict, validateKeyMatchesRegexp(dict))
+//   | _ => (dict, false)
+//   }->(
+//     ((dict, isValidated)) => {
+//       switch isValidated {
+//       | true => Some(dict)
+//       | false => None
+//       }
+//     }
+//   )
 
 let getValue = ((dict, key)) => dict->Belt.Map.String.get(key)->Belt.Option.getExn
 
@@ -141,18 +137,6 @@ let optStrToInt = optStr => optStr->Belt.Int.fromString->Belt.Option.getExn
 
 let optStrToStr = optStr => optStr->Belt.Option.getExn
 
-/**
-type passport_t = {
-  byr: int,
-  iyr: int,
-  eyr: int,
-  hgt: string,
-  hcl: string,
-  ecl: string,
-  pid: int,
-  cid: string,
-}
-**/
 // let convertType = (raw: raw_t): option<passport_t> => {
 let convertType = (raw: raw_t) => {
   try {
@@ -163,7 +147,7 @@ let convertType = (raw: raw_t) => {
       hgt: raw.hgt,
       hcl: raw.hcl,
       ecl: raw.ecl,
-      pid: raw.pid->optStrToInt,
+      pid: raw.pid,
       cid: raw.cid,
     }
 
@@ -179,8 +163,8 @@ passports->Belt.Array.keepMap(passportRaw => parseRaw(passportRaw))->Belt.Array.
 
 // Part two
 passports
-->Belt.Array.keepMap(r => parseRaw(r))
-->Belt.Array.keepMap(str => convertType(str))
-->Belt.Array.keepMap(p => validate((p, "KeyMatchesRegexp")))
-// ->Belt.Array.length
+->Belt.Array.keepMap(passportRaw => passportRaw->parseRaw)
+->Belt.Array.keepMap(str => str->convertType)
+->Belt.Array.keepMap(p => p->validateKeyMatchesRegexp)
+->Belt.Array.length
 ->Js.log
