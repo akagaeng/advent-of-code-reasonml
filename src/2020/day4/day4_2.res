@@ -19,12 +19,7 @@ let hasSameArrayLength = (arrA, arrB) => arrA->Belt.Array.length === arrB->Belt.
 
 let dictKeysToArray = dict => dict->Belt.Map.String.keysToArray
 
-let rangeFilter = ((val, min, max)) => {
-  switch val {
-  | v when v > min - 1 && v < max + 1 => true
-  | _ => false
-  }
-}
+let rangeFilter = ((val, min, max)) => val > min - 1 && val < max + 1
 
 let hgtFilter = ((val, cmMin, cmMax, inMin, inMax)) => {
   switch val {
@@ -84,6 +79,10 @@ let validateKeyMatchesRegexp = dict => {
   hasSameArrayLength(matchedKeys, fields->excludeCid)
 }
 
+// TODO: refactor
+// type validator =
+//  | keyPresent
+//  | KeyMatchesRegexp
 let validate = ((dict, validator)) =>
   switch validator {
   | "keyPresent" => (dict, validateKeyPresent(dict))
@@ -100,16 +99,13 @@ let validate = ((dict, validator)) =>
 
 // Part One
 passports
-->Belt.Array.map(passport => validate((passport, "keyPresent")))
-->Belt.Array.keepMap(v => v)
+->Belt.Array.keepMap(passport => validate((passport, "keyPresent")))
 ->Belt.Array.length
 ->Js.log
 
 // Part two
 passports
-->Belt.Array.map(p => validate((p, "keyPresent")))
-->Belt.Array.keepMap(v => v)
-->Belt.Array.map(p => validate((p, "KeyMatchesRegexp")))
-->Belt.Array.keepMap(v => v)
+->Belt.Array.keepMap(p => validate((p, "keyPresent")))
+->Belt.Array.keepMap(p => validate((p, "KeyMatchesRegexp")))
 ->Belt.Array.length
 ->Js.log
