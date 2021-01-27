@@ -1,4 +1,6 @@
-// array of dict
+// array of record - parse do validate
+// refactoring following below:
+//   parse don't validate! - https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/
 
 let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n\n")
 let fields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"]
@@ -97,20 +99,6 @@ let validateKeyMatchesRegexp = (dict: passport_t) => {
   }
 }
 
-// let validate = ((dict: passport_t, validator)) =>
-//   switch validator {
-//   | "keyPresent" => (dict, validateKeyPresent(dict))
-//   | "KeyMatchesRegexp" => (dict, validateKeyMatchesRegexp(dict))
-//   | _ => (dict, false)
-//   }->(
-//     ((dict, isValidated)) => {
-//       switch isValidated {
-//       | true => Some(dict)
-//       | false => None
-//       }
-//     }
-//   )
-
 let getValue = ((dict, key)) => dict->Belt.Map.String.get(key)->Belt.Option.getExn
 
 let parseRaw = passportRaw => {
@@ -163,8 +151,8 @@ passports->Belt.Array.keepMap(passportRaw => parseRaw(passportRaw))->Belt.Array.
 
 // Part two
 passports
-->Belt.Array.keepMap(passportRaw => passportRaw->parseRaw)
-->Belt.Array.keepMap(str => str->convertType)
-->Belt.Array.keepMap(p => p->validateKeyMatchesRegexp)
+->Belt.Array.keepMap(passportRaw => passportRaw->parseRaw) // raw_t
+->Belt.Array.keepMap(str => str->convertType) // passport_t
+->Belt.Array.keepMap(p => p->validateKeyMatchesRegexp) // passport_t
 ->Belt.Array.length
 ->Js.log
