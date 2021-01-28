@@ -21,7 +21,7 @@ let sortStringArray = arr => {
 let binPow = (exp: int) => Js.Math.pow_int(~base=2, ~exp)
 
 // Part one
-let outs =
+let binSeats =
   inputs->Belt.Array.map(input =>
     input->Js.String2.replaceByRe(%re("/[FL]/g"), "0")->Js.String2.replaceByRe(%re("/[BR]/g"), "1")
   )
@@ -36,13 +36,12 @@ let calcP1 = arr =>
     }
   })
 
-let out =
-  outs
-  ->sortStringArray
-  ->Belt.Array.keepWithIndex((_, i) => i === outs->Belt.Array.length - 1)
-  ->Js.Array2.toString
-  ->Js.String2.split("")
-  ->calcP1
-  ->Js.log
+binSeats
+->sortStringArray
+->Belt.Array.keepWithIndex((_, i) => i === binSeats->Belt.Array.length - 1)
+->Js.Array2.toString
+->Js.String2.split("")
+->calcP1
+->Js.log
 
 // Part two
