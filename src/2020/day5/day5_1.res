@@ -27,12 +27,14 @@ let binSeats =
   )
 
 let calcP1 = arr =>
-  arr->Belt.Array.reduceWithIndex(0, (acc, v, i) => {
+  arr
+  ->Belt.Array.reverse
+  ->Belt.Array.reduceWithIndex(0, (acc, v, i) => {
     let digit = v->int_of_string
-    if i < rowCharLen {
-      acc + 8 * digit * binPow(rowCharLen - i - 1)
+    if i < colCharLen {
+      acc + digit * binPow(i)
     } else {
-      acc + digit * binPow(i - rowCharLen)
+      acc + 8 * digit * binPow(i - colCharLen)
     }
   })
 
