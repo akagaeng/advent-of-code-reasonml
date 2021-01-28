@@ -49,6 +49,9 @@ binSeats
 
 // Part two
 
+// 0 ~ 127 -> 1~126 (not front or back)
+let rowRange = Belt.Array.range(1, binPow(rowLen) - 1 - 1)->Js.log
+
 binSeats
 ->sortStringArray
 ->Belt.Array.map(sortedSeats => {
@@ -56,12 +59,4 @@ binSeats
   let col = sortedSeats->Js.String2.slice(~from=rowLen, ~to_=codeLen)
   (row, col)
 })
-
-// let binSeats->sortStringArray = inputs->Belt.Array.map(input => {
-//   let (row, col) = input->sortStringArray
-//   // (row, col)
-//   row
-//   // input->Js.String2.replaceByRe(%re("/[FL]/g"), "0")
-//   // ->Js.String2.replaceByRe(%re("/[BR]/g"), "1")
-// })
 ->Js.log
