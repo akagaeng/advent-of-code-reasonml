@@ -18,7 +18,7 @@ let sortStringArray = arr => {
   Belt.Set.fromArray(arr, ~id=module(StrCmp))->Belt.Set.toArray
 }
 
-let binPow = (exp: int) => Js.Math.pow_int(~base=2, ~exp)
+let binPow = (exp: int) => Js.Math.pow_float(~base=2.0, ~exp=exp->Belt.Int.toFloat)->int_of_float
 
 // Part one
 let binSeats =
@@ -47,3 +47,9 @@ binSeats
 ->Js.log
 
 // Part two
+// let binSeats = inputs->Belt.Array.map(input => {
+//   let (row, col) = input->splitSeatAt(rowCharLen)
+//   (row, col)
+//   // input->Js.String2.replaceByRe(%re("/[FL]/g"), "0")
+//   // ->Js.String2.replaceByRe(%re("/[BR]/g"), "1")
+// })->Js.log
