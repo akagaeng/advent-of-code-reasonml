@@ -1,6 +1,7 @@
 let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")
-let rowCharLen = 7
-let colCharLen = 3
+let codeLen = 10
+let rowLen = 7
+let colLen = 3
 
 module StrCmp = Belt.Id.MakeComparable({
   type t = string
@@ -31,10 +32,10 @@ let calcP1 = arr =>
   ->Belt.Array.reverse
   ->Belt.Array.reduceWithIndex(0, (acc, v, i) => {
     let digit = v->int_of_string
-    if i < colCharLen {
+    if i < colLen {
       acc + digit * binPow(i)
     } else {
-      acc + 8 * digit * binPow(i - colCharLen)
+      acc + 8 * digit * binPow(i - colLen)
     }
   })
 
@@ -47,9 +48,20 @@ binSeats
 ->Js.log
 
 // Part two
-// let binSeats = inputs->Belt.Array.map(input => {
-//   let (row, col) = input->splitSeatAt(rowCharLen)
-//   (row, col)
+
+binSeats
+->sortStringArray
+->Belt.Array.map(sortedSeats => {
+  let row = sortedSeats->Js.String2.slice(~from=0, ~to_=rowLen)
+  let col = sortedSeats->Js.String2.slice(~from=rowLen, ~to_=codeLen)
+  (row, col)
+})
+
+// let binSeats->sortStringArray = inputs->Belt.Array.map(input => {
+//   let (row, col) = input->sortStringArray
+//   // (row, col)
+//   row
 //   // input->Js.String2.replaceByRe(%re("/[FL]/g"), "0")
 //   // ->Js.String2.replaceByRe(%re("/[BR]/g"), "1")
-// })->Js.log
+// })
+->Js.log
