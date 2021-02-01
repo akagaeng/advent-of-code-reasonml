@@ -34,7 +34,14 @@ let replaceCharsTo = (str: string, chars: string, toChar: string) => {
 let binSeats =
   inputs->Belt.Array.map(input => input->replaceCharsTo("FL", "0")->replaceCharsTo("BR", "1"))
 
-let calcCode = (str: string) =>
+/**
+  Calculate ID
+ ex) 1011101 101
+ - col = 2^0 * 1 + 2^1 * 0 + ... + 2^6 * 1
+ - row = 2^0 * 1 + 2^1 * 0 + 2^2 * 1
+ - ID = 8 * col + row
+**/
+let calculateID = (str: string) =>
   str
   ->Js.String2.split("")
   ->Belt.Array.reverse
@@ -94,7 +101,7 @@ let findOnly1MissingSeat = dict =>
   ->Belt.Array.reduce("", (acc, (k, v)) => acc ++ k ++ v)
 
 // Part one
-binSeats->sortBinSeats->getLastOne->calcCode->Js.log
+binSeats->sortBinSeats->getLastOne->calculateID->Js.log
 
 // Part two
-binSeats->Belt.Array.map(binSeatToRowAndCol)->arrayToJson->findOnly1MissingSeat->calcCode->Js.log
+binSeats->Belt.Array.map(binSeatToRowAndCol)->arrayToJson->findOnly1MissingSeat->calculateID->Js.log
