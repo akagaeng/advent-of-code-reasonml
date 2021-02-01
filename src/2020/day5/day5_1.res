@@ -63,29 +63,43 @@ let binSeatsRowSet =
 // ->Belt.Array.length
 // ->Js.log
 
+let getDiffCol = ((arr1, arr2)) => {
+  let arr1Set = Belt.Set.String.fromArray(arr1)
+  let arr2Set = Belt.Set.String.fromArray(arr2)
+  Belt.Set.String.toArray(Belt.Set.String.diff(arr1Set, arr2Set))
+}
+
 let binSeatsArray = binSeats
 ->sortStringArray
 ->Belt.Array.mapWithIndex((i, sortedSeat) => {
   let row = sortedSeat->Js.String2.slice(~from=0, ~to_=rowCodeLen)
   let col = sortedSeat->Js.String2.slice(~from=rowCodeLen, ~to_=codeLen)
-
-  let idx = mod(i, colLen)
-  let nextIdx = idx + 1
-
-  // switch idx < 7 {
-  //   Some()
-  // }
-  (row, col, sortedSeat, i, idx, nextIdx, binSeatsRowSet[nextIdx])
-  // colLen
+  (row, col)
 })
+->Belt.Array.reduce(Js.Dict.empty(), (acc, (key, val)) => {
+  let keyExists = Js.Dict.get(acc, key)
+
+  switch keyExists {
+  | Some(arr) => {
+      Js.Dict.set(acc, key, Belt.Array.concat(arr, [val]))
+      acc
+    }
+  | _ => {
+      Js.Dict.set(acc, key, Belt.Array.concat([], [val]))
+      acc
+    }
+  }
+})
+->Js.Dict.entries
+->Belt.Array.keepMap(((k, v)) => {
+  let vLen = Belt.Array.length(v)
+
+  switch vLen === 7 {
+  | true => Some((k, getDiffCol((binSeatsColSet, v))[0]))
+  | false => None
+  }
+})
+->Belt.Array.reduce("", (acc, (k, v)) => acc ++ k ++ v)
+->Js.String2.split("")
+->calcP1
 ->Js.log
-// ->Belt.Array.length
-
-// binSeatsRowSet->Belt.Array.length->Js.log // 118
-binSeatsColSet->Js.log
-// ->Belt.Array.length // 8
-
-// binSeatsArray->Js.Dict.fromArray->Js.Dict.keys->Js.log
-
-// binSeatsRowSet
-// ->Belt.Array.map(s => )
