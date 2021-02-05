@@ -25,8 +25,9 @@ let parseRawBag = sentences => {
   })
 }
 
-let parseBag = rawBags => {
-  rawBags->Belt.Array.map(rawBag => {
+let parseBag = rawBags =>
+  rawBags
+  ->Belt.Array.map(rawBag => {
     rawBag.raw_contents
     ->Js.String2.split(" , ")
     ->Belt.Array.map(quantityAndColor => {
@@ -38,13 +39,58 @@ let parseBag = rawBags => {
       {color: rawBag.raw_color, contents: contents}
     })
   })
+  ->Belt.Array.concatMany
+
+let findColorExists = (target, value) => {
+  target->Belt.List.has(value, (tar, val) => tar.color === val.color)
 }
 
-let inputs =
-  Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parseRawBag->parseBag
+let sumCnt = arr => arr->Belt.Array.reduce(0, (a, b) => a + b)
+
+let uniqueArray = arr => arr->Belt.Set.String.fromArray->Belt.Set.String.toArray
+
+let findBagDirectlyContainingColor = (bags: array<bag_t>, colorToFind: string) =>
+  bags->Belt.Array.keepMap(bag =>
+    switch bag.contents.contents_color == colorToFind {
+    | true => Some(bag.color)
+    | false => None
+    }
+  )
+
+let contains = (union: array<string>, subset: array<string>) => {
+  let unionList = union->Belt.List.fromArray
+  let subsetList = subset->Belt.List.fromArray
+
+  subsetList->Belt.List.every(v => unionList->Belt.List.has(v, (a, b) => a == b))
+}
+
+let rec findBagInDirectlyContainingColor = (colors, bags) => {
+  let parentColors = colors
+  ->Belt.Array.map(indirectColor => {
+    bags->findBagDirectlyContainingColor(indirectColor)
+  })
+  ->Belt.Array.concatMany
+  ->uniqueArray
+
+  switch colors->contains(parentColors) {
+  | true => colors
+  | false => findBagInDirectlyContainingColor(colors->Belt.Array.concat(parentColors), bags)
+  }
+}
+
+let bags = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parseRawBag->parseBag
+
+let targetColor = "shiny gold"
+
+let removeTargetColor = (arr, targetColor) => arr->Belt.Array.keep(v => v !== targetColor)
 
 // Part 1
-inputs->Js.log
+bags
+->findBagDirectlyContainingColor(targetColor)
+->findBagInDirectlyContainingColor(bags)
+->uniqueArray
+->removeTargetColor(targetColor)
+->Belt.Array.length
+->Js.log
 
 // Part 2
-// inputs->Js.log
