@@ -1,8 +1,3 @@
-/* Try instead
-type node('node_t, 'extra) = ('node_t, array(('extra, 'node_t)))
-type graph = array(node);
-*/
-
 type input_t = array<string>
 
 // Node
@@ -21,117 +16,88 @@ type node_t = {
 
 type graph_t = array<node_t>
 
-let parse = (inputs: input_t) => {
-  // : graph_t
-
-  inputs->Belt.Array.map(sen => {
-    let kv =
-      sen
-      ->Js.String2.replaceByRe(%re("/bags|bag|[.]/g"), "")
-      ->Js.String2.replace("no", "0")
-      ->Js.String2.trim
-      ->Js.String2.split("  contain ")
-
-    let color = kv[0]
-    let nodesArr =
-      kv[1]
-      ->Js.String2.split(" , ")
-      ->Belt.Array.map(content => {
-        let qc = content->Js.String2.splitByRe(%re("/ (.*)/"))
-
-        // color, quantity, value
-        (color, qc[1]->Belt.Option.getExn, qc[0]->Belt.Option.getExn->int_of_string)
-      })
-
-    nodesArr
-    // let adjacents = Belt.Array.reduce([], (acc, item) => acc->Belt.Array.concat([{value, extra}]))
-    // {value: color, nodes)
-
-    // type node_t = {
-    //   value: string,
-    //   extra: int,
-    //   adjacents: array<contents_t>,
-    // }
-
-    // {
-    //   value: nodesArr[0]->Belt.Int.toString,
-    //   extra: nodesArr[2],
-    //   adjacents: [nodesArr[1]],
-    // }
-
-    // nodes
-  })
-  // ->Belt.Array.concatMany
-}
-
-// let parseBag = rawBags =>
-//   rawBags
-//   ->Belt.Array.map(rawBag => {
-//     rawBag.contents
-//     ->Js.String2.split(" , ")
-//     ->Belt.Array.map(quantityAndColor => {
-//       let cntColor = quantityAndColor->Js.String2.splitByRe(%re("/ (.*)/"))
-//       let contents = {
-//         quantity: cntColor[0]->Belt.Option.getExn->int_of_string,
-//         color: cntColor[1]->Belt.Option.getExn,
-//       }
-//       {color: rawBag.color, contents: contents}
-//     })
-//   })
-//   ->Belt.Array.concatMany
-
-// let findColorExists = (target, value) => {
-//   target->Belt.List.has(value, (tar, val) => tar.color === val.color)
-// }
-
-let sumCnt = arr => arr->Belt.Array.reduce(0, (a, b) => a + b)
-
 let uniqueArray = arr => arr->Belt.Set.String.fromArray->Belt.Set.String.toArray
 
-// let findBagDirectlyContainingColor = (bags: array<bag_t>, colorToFind: string) =>
-//   bags->Belt.Array.keepMap(bag =>
-//     switch bag.contents.color == colorToFind {
-//     | true => Some(bag.color)
-//     | false => None
-//     }
-//   )
+let parse = (inputs: input_t) =>
+  // : graph_t
 
-let contains = (union: array<string>, subset: array<string>) => {
-  let unionList = union->Belt.List.fromArray
-  let subsetList = subset->Belt.List.fromArray
+  {
+    let parentColorAndContentArr =
+      inputs
+      ->Belt.Array.map(input => {
+        let kv =
+          input
+          ->Js.String2.replaceByRe(%re("/bags|bag|[.]/g"), "")
+          ->Js.String2.replace("no", "0")
+          ->Js.String2.trim
+          ->Js.String2.split("  contain ")
 
-  subsetList->Belt.List.every(v => unionList->Belt.List.has(v, (a, b) => a == b))
-}
+        let color = kv[0]
+        let parentColorAndContent =
+          kv[1]
+          ->Js.String2.split(" , ")
+          ->Belt.Array.map(content => {
+            let qc = content->Js.String2.splitByRe(%re("/ (.*)/"))
+            (
+              color,
+              {
+                value: qc[1]->Belt.Option.getExn,
+                extra: qc[0]->Belt.Option.getExn->int_of_string,
+              },
+            )
+          })
+        parentColorAndContent
+      })
+      ->Belt.Array.concatMany
 
-// let rec findBagInDirectlyContainingColor = (colors, bags) => {
-//   let parentColors = colors
-//   ->Belt.Array.map(indirectColor => {
-//     bags->findBagDirectlyContainingColor(indirectColor)
-//   })
-//   ->Belt.Array.concatMany
-//   ->uniqueArray
+    let graph = parentColorAndContentArr->Belt.Array.reduce([], (
+      acc,
+      (color: string, node: contents_t),
+    ) => {
+      let contains = (graph: graph_t, color: string): bool => {
+        graph->Belt.Array.some(g => {
+          g.value == color
+        })
+      }
 
-//   switch colors->contains(parentColors) {
-//   | true => colors
-//   | false => findBagInDirectlyContainingColor(colors->Belt.Array.concat(parentColors), bags)
-//   }
-// }
+      switch acc->contains(color) {
+      | true => {
+          let lastElement = [acc->Belt.Array.getExn(acc->Belt.Array.length - 1)]
+          // Js.log(("acc", acc, lastElement))
+          // lastElement
+          // acc->Belt.Array.concat([
+          //   {
+          //     value: color,
+          //     adjacents: [node],
+          //   },
+          // ])
+          acc->Belt.Array.
+        }
+      // [acc->Belt.Array.getExn(acc->Belt.Array.length - 1)]->Belt.Array.concat([node])
+      | false =>
+        // 없는 경우, k, v 다 넣음
+        acc->Belt.Array.concat([
+          {
+            value: color,
+            adjacents: [node],
+          },
+        ])
+      }
+    })
+
+    graph
+  }->Belt.Array.map(v => (v.value, v.adjacents->Belt.Array.map(v => v.value)))
 
 let bags = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")
-// ->parse
-// ->parseBag
 
 let targetColor = "shiny gold"
 
-let removeTargetColor = (arr, targetColor) => arr->Belt.Array.keep(v => v !== targetColor)
-
 // Part 1
-bags->parse->Js.log
-// ->findBagDirectlyContainingColor(targetColor)
-// ->findBagInDirectlyContainingColor(bags)
-// ->uniqueArray
-// ->removeTargetColor(targetColor)
-// ->Belt.Array.length
+bags
+->parse
+// ->search
+// ->sum
+->Js.log
 
 // Part 2
 
