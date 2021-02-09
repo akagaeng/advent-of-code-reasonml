@@ -26,6 +26,12 @@ let parse = (inputs: input_t) =>
   })
   ->Belt.Map.String.fromArray
 
+/* MapString
+{
+   "shiny gold": "1 dark olive , 2 vibrant plum",
+   ...
+}
+*/
 let parseAdjacents = (adjacents:string) => {
   adjacents
   ->Js.String2.split(" , ")
@@ -38,12 +44,12 @@ let parseAdjacents = (adjacents:string) => {
   })
 }
 
-let search = (bags, targetColor) => {
-  let adjacents = bags->Belt.Map.String.get(targetColor)
+// let search = (bags, targetColor) => {
+//   let adjacents = bags->Belt.Map.String.get(targetColor)
 
-  adjacents->parseAdjacents
-  // adjacents
-}
+//   adjacents->parseAdjacents
+//   // adjacents
+// }
 // {
 //   // let parentColorAndContentArr =
 //     inputs
@@ -131,7 +137,7 @@ let targetColor = "shiny gold"
 // Part 1
 bags
 ->parse
-->search(targetColor)
+// ->search(targetColor)
 // ->sum
 ->Js.log
 
