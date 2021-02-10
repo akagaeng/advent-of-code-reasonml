@@ -1,16 +1,16 @@
 type input_t = array<string>
 
-type contents_t = {
-  value: string,
-  extra: int,
-}
-
 type node_t = {
-  value: string,
-  adjacents: string, // -> array<contents_t>
+  color: string,
+  count: int,
 }
 
 type graph_t = array<node_t>
+
+module StrCmp = Belt.Id.MakeComparable({
+  type t = string
+  let cmp = Pervasives.compare
+})
 
 // Return: MapString type def?
 let parse = (inputs: input_t) =>
@@ -26,116 +26,63 @@ let parse = (inputs: input_t) =>
   })
   ->Belt.Map.String.fromArray
 
-let parseAdjacents = (adjacents:string) => {
+let parseAdjacents = (adjacents: string) => {
   adjacents
   ->Js.String2.split(" , ")
   ->Belt.Array.map(content => {
     let qc = content->Js.String2.splitByRe(%re("/ (.*)/"))
     {
-      value: qc[1]->Belt.Option.getExn,
-      extra: qc[0]->Belt.Option.getExn->int_of_string,
+      color: qc[1]->Belt.Option.getExn,
+      count: qc[0]->Belt.Option.getExn->int_of_string,
     }
   })
 }
 
-let search = (bags, targetColor) => {
-  let adjacents = bags->Belt.Map.String.get(targetColor)
-
-  adjacents->parseAdjacents
-  // adjacents
+let findTargetColorFromBags = (bags, targetColor) => {
+  bags->Belt.Map.String.getExn(targetColor)
 }
-// {
-//   // let parentColorAndContentArr =
-//     inputs
-//     ->Belt.Array.map(input => {
-//       // let kv =
-//         input
-//         ->Js.String2.replaceByRe(%re("/bags|bag|[.]/g"), "")
-//         ->Js.String2.replace("no", "0")
-//         ->Js.String2.trim
-//         ->Js.String2.split("  contain ")
 
-//       // let color = kv[0]
-//       // let parentColorAndContent =
-//       //   kv[1]
-//       //   ->Js.String2.split(" , ")
-//       //   ->Belt.Array.map(content => {
-//       //     let qc = content->Js.String2.splitByRe(%re("/ (.*)/"))
-//       //     (
-//       //       color,
-//       //       {
-//       //         value: qc[1]->Belt.Option.getExn,
-//       //         extra: qc[0]->Belt.Option.getExn->int_of_string,
-//       //       },
-//       //     )
-//       //   })
-//       // parentColorAndContent
-//     })
-//     ->Belt.Array.concatMany
+let getColors = (contents: array<node_t>): array<string> => contents->Belt.Array.map(c => c.color)
 
-//   let graph = parentColorAndContentArr->Belt.Array.reduce([], (
-//     acc,
-//     (color: string, node: contents_t),
-//   ) => {
-//     let contains = (graph: graph_t, color: string): bool => {
-//       graph->Belt.Array.some(g => {
-//         g.value == color
-//       })
-//     }
+let getColorCounts = (contents: array<node_t>): array<int> => contents->Belt.Array.map(c => c.count)
 
-//     // switch acc->contains(color) {
-//     // | true => {
-//     //     let lastElement = [acc->Belt.Array.getExn(acc->Belt.Array.length - 1)]
-//     //     // https://rescript-lang.org/docs/manual/latest/api/belt/array#set
+let getColor = (node: node_t): string => node.color
 
-//     //     // acc->Belt.Array.getExn(acc->Belt.Array.length - 1)
-//     //     // adjacents
-//     //     let adjacents = Belt.Array.get();
-//     //     acc->Belt.Array.set(index, {
-//     //       {
-//     //          value: color,
-//     //          adjacents: old_adjacents->Belt.List.add(newNode)
-//     //        }
-//     //     })
-//     //     acc
+let isNotNoOtherFromMpde = (parsedAdjacents: array<node_t>) =>
+  parsedAdjacents->Belt.Array.keep(node => node.color !== "other")
 
-//     //     // Js.log(("acc", acc, lastElement))
-//     //     // lastElement
-//     //     // acc->Belt.Array.concat([
-//     //     //   {
-//     //     //     value: color,
-//     //     //     adjacents: [node, ...],
-//     //     //   },
-//     //     // ])
-//     //     acc->Belt.Array.
-//     //   }
-//     // // [acc->Belt.Array.getExn(acc->Belt.Array.length - 1)]->Belt.Array.concat([node])
-//     // | false =>
-//     //   // 없는 경우, k, v 다 넣음
-//     //   acc->Belt.Array.concat([
-//     //     {
-//     //       value: color,
-//     //       adjacents: [node],
-//     //     },
-//     //   ])
-//     // }
-//   })
+let isNotOtherFromColor = (colors: array<string>) => colors->Belt.Array.keep(c => c !== "other")
 
-//   graph
-// }->Belt.Array.map(v => (v.value, v.adjacents->Belt.Array.map(v => v.value)))
+let findAdjacentNodes = (targetColors, bags) => {
+  targetColors
+  ->Belt.Array.map(targetColor => bags->findTargetColorFromBags(targetColor))
+  ->Belt.Array.map(adjacent => adjacent->parseAdjacents)
+  ->Belt.Array.concatMany
+}
 
-let bags = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")
+let rec search = (bags, targetColors: array<string>, vertices: array<node_t>) => {
+  let adjacentNodes = targetColors->isNotOtherFromColor->findAdjacentNodes(bags)
+  switch adjacentNodes->Belt.Array.length == 0 {
+  | true => vertices
+  | false => search(bags, adjacentNodes->getColors, vertices->Belt.Array.concat(adjacentNodes))
+  }
+}
+
+let getLength = arr => arr->Belt.Array.length
+
+let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
 
 let targetColor = "shiny gold"
 
-// Part 1
-bags
-->parse
-->search(targetColor)
-// ->sum
-->Js.log
-
 // Part 2
+inputs->search([targetColor], [])->getColorCounts->Js.log
 
-// p1: find parents
-// p2: find sons
+/*
+shiny gold 
+    -> 1 dark olive
+        -> 3 faded blue     -> 0 other
+        -> 4 dotted black   -> 0 other
+    -> 2 vibrant plum
+        -> 5 faded blue      -> 0 other
+        -> 6 dotted black    -> 0 other
+*/
