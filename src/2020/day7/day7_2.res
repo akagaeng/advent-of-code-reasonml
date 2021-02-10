@@ -7,6 +7,9 @@ type node_t = {
 
 type graph_t = array<node_t>
 
+// type adjacencyList = array(node_t, array(node_t));
+// type adjacencyList = array(string, array((int, string)))
+
 module StrCmp = Belt.Id.MakeComparable({
   type t = string
   let cmp = Pervasives.compare
@@ -74,7 +77,7 @@ let rec search = (bags, targetColors: array<string>, vertices: array<node_t>) =>
 
 let getLength = arr => arr->Belt.Array.length
 
-let inputs = Node.Fs.readFileAsUtf8Sync("./sample_2.txt")->Js.String2.split("\n")
+let inputs = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")
 
 let targetColor = "shiny gold"
 
@@ -91,6 +94,10 @@ uniqueKeyColors
 //   // tailColor
 //   // thisArr->Belt.List.fromArray->Belt.List.tail
 // })
+->Js.log
+
+// Part 1 # DOING
+inputs->parse
 ->Js.log
 
 // Part 2
