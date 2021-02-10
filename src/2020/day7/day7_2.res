@@ -42,6 +42,10 @@ let findTargetColorFromBags = (bags, targetColor) => {
   bags->Belt.Map.String.getExn(targetColor)
 }
 
+let toUnique = (arr: array<string>): array<string> => {
+  arr->Belt.Set.fromArray(~id=module(StrCmp))->Belt.Set.toArray
+}
+
 let getColors = (contents: array<node_t>): array<string> => contents->Belt.Array.map(c => c.color)
 
 let getColorCounts = (contents: array<node_t>): array<int> => contents->Belt.Array.map(c => c.count)
@@ -70,12 +74,27 @@ let rec search = (bags, targetColors: array<string>, vertices: array<node_t>) =>
 
 let getLength = arr => arr->Belt.Array.length
 
-let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
+let inputs = Node.Fs.readFileAsUtf8Sync("./sample_2.txt")->Js.String2.split("\n")
 
 let targetColor = "shiny gold"
 
+let uniqueKeyColors = inputs->parse->Belt.Map.String.keysToArray->toUnique
+
+uniqueKeyColors
+->Belt.Array.map(keyColor => {
+  inputs->parse->search([keyColor], [])->Belt.Array.keep(v => v.color != "other")
+})
+// ->Belt.Array.keepMap(r => {
+//   let thisArr = r->Belt.Array.keep(v => v.color != "other")
+//   // Js.log(("thisArr:", thisArr, thisArr->Belt.Array.length))
+//   // let tailColor = thisArr[(thisArr->Belt.Array.length) - 1]
+//   // tailColor
+//   // thisArr->Belt.List.fromArray->Belt.List.tail
+// })
+->Js.log
+
 // Part 2
-inputs->search([targetColor], [])->getColorCounts->Js.log
+inputs->parse->search([targetColor], [])->getColorCounts->Js.log
 
 /*
 shiny gold 
