@@ -1,33 +1,22 @@
 type input_t = array<string>
 
+type color_t = string
+
 type node_t = {
   color: string,
   count: int,
 }
 
-type graph_t = array<node_t>
+type bag_str_t = array<(string, string)>
 
-// type adjacencyList = array(node_t, array(node_t));
-// type adjacencyList = array(string, array((int, string)))
+type bag_t = {color: string, adjacents: array<node_t>}
+
+type bags_t = array<bag_t>
 
 module StrCmp = Belt.Id.MakeComparable({
   type t = string
   let cmp = Pervasives.compare
 })
-
-// Return: MapString type def?
-let parse = (inputs: input_t) =>
-  inputs
-  ->Belt.Array.map(input => {
-    let kv =
-      input
-      ->Js.String2.replaceByRe(%re("/bags|bag|[.]/g"), "")
-      ->Js.String2.replace("no", "0")
-      ->Js.String2.trim
-      ->Js.String2.split("  contain ")
-    (kv[0], kv[1])
-  })
-  ->Belt.Map.String.fromArray
 
 /* MapString
 {
@@ -35,8 +24,8 @@ let parse = (inputs: input_t) =>
    ...
 }
 */
-let parseAdjacents = (adjacents: string) => {
-  adjacents
+let parseSons = (sons: string) => {
+  sons
   ->Js.String2.split(" , ")
   ->Belt.Array.map(content => {
     let qc = content->Js.String2.splitByRe(%re("/ (.*)/"))
@@ -46,6 +35,40 @@ let parseAdjacents = (adjacents: string) => {
     }
   })
 }
+
+let parseReverse = (inputs: input_t): bag_str_t =>
+  inputs
+  ->Belt.Array.map(input => {
+    let kv =
+      input
+      ->Js.String2.replaceByRe(%re("/bags|bag|[.]/g"), "")
+      ->Js.String2.replace("no", "0")
+      ->Js.String2.trim
+      ->Js.String2.split("  contain ")
+
+    let vertices = kv[1]->parseSons
+    let color = kv[0]
+
+    vertices->Belt.Array.map(vertex => {
+      (vertex.color, color)
+    })
+  })
+  ->Belt.Array.concatMany
+
+let parse = (inputs: input_t): bags_t =>
+  inputs->Belt.Array.map(input => {
+    let kv =
+      input
+      ->Js.String2.replaceByRe(%re("/bags|bag|[.]/g"), "")
+      ->Js.String2.replace("no", "0")
+      ->Js.String2.trim
+      ->Js.String2.split("  contain ")
+
+    let adjacents = kv[1]->parseSons
+    let color = kv[0]
+
+    {color: color, adjacents: adjacents}
+  })
 
 let findTargetColorFromBags = (bags, targetColor) => {
   bags->Belt.Map.String.getExn(targetColor)
@@ -69,30 +92,46 @@ let isNotOtherFromColor = (colors: array<string>) => colors->Belt.Array.keep(c =
 let findAdjacentNodes = (targetColors, bags) => {
   targetColors
   ->Belt.Array.map(targetColor => bags->findTargetColorFromBags(targetColor))
-  ->Belt.Array.map(adjacent => adjacent->parseAdjacents)
+  ->Belt.Array.map(adjacent => adjacent->parseSons)
   ->Belt.Array.concatMany
 }
 
-let rec search = (bags, targetColors: array<string>, vertices: array<node_t>) => {
-  let adjacentNodes = targetColors->isNotOtherFromColor->findAdjacentNodes(bags)
-  switch adjacentNodes->Belt.Array.length == 0 {
-  | true => vertices
-  | false => search(bags, adjacentNodes->getColors, vertices->Belt.Array.concat(adjacentNodes))
-  }
+// let rec search = (bags, targetColors: array<string>, vertices: array<node_t>) => {
+//   let adjacentNodes = targetColors->isNotOtherFromColor->findAdjacentNodes(bags)
+//   switch adjacentNodes->Belt.Array.length == 0 {
+//   | true => vertices
+//   | false => search(bags, adjacentNodes->getColors, vertices->Belt.Array.concat(adjacentNodes))
+//   }
+// }
+
+let rec search = (bags: bags_t, targetColor: color_t) => {
+  bags->Belt.Array.reduce([], (acc, item) => {
+    Js.log(("acc, item", acc, item.color))
+
+    switch item.color == targetColor {
+    | true =>
+      // item.adjacents->Belt.Array.map(adj => adj.color->search)
+      // acc->Belt.Array.concat([item])
+      item.adjacents->Belt.Array.map(adj => {
+        bags->search(adj.color)
+      })
+    | false => acc
+    }
+  })
 }
 
 let getLength = arr => arr->Belt.Array.length
 
-let inputs = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")
+let inputs = Node.Fs.readFileAsUtf8Sync("./sample_p2.txt")->Js.String2.split("\n")
 
 let targetColor = "shiny gold"
 
-let uniqueKeyColors = inputs->parse->Belt.Map.String.keysToArray->toUnique
+// let uniqueKeyColors = inputs->parse->Belt.Map.String.keysToArray->toUnique
 
-uniqueKeyColors
-->Belt.Array.map(keyColor => {
-  inputs->parse->search([keyColor], [])->Belt.Array.keep(v => v.color != "other")
-})
+// uniqueKeyColors
+// ->Belt.Array.map(keyColor => {
+//   inputs->parse->search([keyColor], [])->Belt.Array.keep(v => v.color != "other")
+// })
 // ->Belt.Array.keepMap(r => {
 //   let thisArr = r->Belt.Array.keep(v => v.color != "other")
 //   // Js.log(("thisArr:", thisArr, thisArr->Belt.Array.length))
@@ -100,15 +139,21 @@ uniqueKeyColors
 //   // tailColor
 //   // thisArr->Belt.List.fromArray->Belt.List.tail
 // })
->>>>>>> 1fe73bf394f853a688ebf04c617fec4bdfbd58dc
-->Js.log
+// ->Js.log
 
 // Part 1 # DOING
-inputs->parse
-->Js.log
+// inputs
+// ->parseReverse
+// ->Js.log
 
 // Part 2
-inputs->parse->search([targetColor], [])->getColorCounts->Js.log
+inputs
+->parse
+// bags[0]
+->search(targetColor)
+->Js.log
+
+// ->getColorCounts
 
 /*
 shiny gold 
