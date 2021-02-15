@@ -9,7 +9,7 @@ type node_t = {
 
 type bag_str_t = array<(string, string)>
 
-type bag_t = {color: string, adjacents: array<node_t>}
+type bag_t = {color: string, contents: array<node_t>}
 
 type bags_t = array<bag_t>
 
@@ -64,10 +64,10 @@ let parse = (inputs: input_t): bags_t =>
       ->Js.String2.trim
       ->Js.String2.split("  contain ")
 
-    let adjacents = kv[1]->parseSons
+    let contents = kv[1]->parseSons
     let color = kv[0]
 
-    {color: color, adjacents: adjacents}
+    {color: color, contents: contents}
   })
 
 let findTargetColorFromBags = (bags, targetColor) => {
@@ -96,33 +96,40 @@ let findAdjacentNodes = (targetColors, bags) => {
   ->Belt.Array.concatMany
 }
 
-// let rec search = (bags, targetColors: array<string>, vertices: array<node_t>) => {
-//   let adjacentNodes = targetColors->isNotOtherFromColor->findAdjacentNodes(bags)
-//   switch adjacentNodes->Belt.Array.length == 0 {
-//   | true => vertices
-//   | false => search(bags, adjacentNodes->getColors, vertices->Belt.Array.concat(adjacentNodes))
-//   }
-// }
+/*
+ bags = [
+   {color: 'shiny gold', contents: [ { color: 'dark red', count: 2 } ] },
+   {color: 'dark red', contents: [ { color: 'dark orange', count: 2 } ] },
+   ...
+  ]
+*/
 
-let rec search = (bags: bags_t, targetColor: color_t) => {
-  bags->Belt.Array.reduce([], (acc, item) => {
-    Js.log(("acc, item", acc, item.color))
-
-    switch item.color == targetColor {
-    | true =>
-      // item.adjacents->Belt.Array.map(adj => adj.color->search)
-      // acc->Belt.Array.concat([item])
-      item.adjacents->Belt.Array.map(adj => {
-        bags->search(adj.color)
-      })
-    | false => acc
+let findBagWith = (bags: bags_t, targetColor) => {
+  bags->Belt.Array.keepMap(bag => {
+    switch bag.color == targetColor {
+    | true => Some(bag)
+    | false => None
     }
   })
 }
 
+let rec search = (bags: bags_t, targetColor: color_t) => {
+  let foundBag = bags->findBagWith(targetColor)->Belt.Array.get(0)
+
+  switch foundBag {
+  | Some(foundBag) =>
+    foundBag.contents->Belt.Array.reduce(1, (acc, content) => {
+      acc + bags->search(content.color) * content.count
+    })
+  | None => 0
+  }
+}
+
+let finalize = (sum: int) => sum - 1
+
 let getLength = arr => arr->Belt.Array.length
 
-let inputs = Node.Fs.readFileAsUtf8Sync("./sample_p2.txt")->Js.String2.split("\n")
+let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")
 
 let targetColor = "shiny gold"
 
@@ -149,18 +156,29 @@ let targetColor = "shiny gold"
 // Part 2
 inputs
 ->parse
-// bags[0]
 ->search(targetColor)
+->finalize
 ->Js.log
 
-// ->getColorCounts
-
 /*
+shiny gold
+  -> 1 dark olive = 1 * (3 + 4)
+    -> 3 faded blue     -> 0 other
+    -> 4 dotted black   -> 0 other
+  -> 2 vibrant plum = 2
+    -> 5 faded blue      -> 0 other = 2 * 5
+    -> 6 dotted black    -> 0 other = 2 * 6
+
+sum = 1 + 1 * (3 + 4) + 2 + 2 * (5 + 6)
+
 shiny gold 
-    -> 1 dark olive
-        -> 3 faded blue     -> 0 other
-        -> 4 dotted black   -> 0 other
-    -> 2 vibrant plum
-        -> 5 faded blue      -> 0 other
-        -> 6 dotted black    -> 0 other
+  -> 2 dark red
+    -> 2 dark orange
+      -> 2 dark yellow
+        -> 2 dark green
+          -> 2 dark blue
+            -> 2 dark violet
+              -> no other
+
+sum = 2 + 2 * (2 + 2 * (2 + 2 * (2 + 2 * (2 + 2 * (2 + 2 * 0))))
 */
