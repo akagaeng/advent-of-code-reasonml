@@ -18,13 +18,7 @@ module StrCmp = Belt.Id.MakeComparable({
   let cmp = Pervasives.compare
 })
 
-/* MapString
-{
-   "shiny gold": "1 dark olive , 2 vibrant plum",
-   ...
-}
-*/
-let parseSons = (sons: string) => {
+let parseContents = (sons: string) => {
   sons
   ->Js.String2.split(" , ")
   ->Belt.Array.map(content => {
@@ -36,7 +30,8 @@ let parseSons = (sons: string) => {
   })
 }
 
-let parseReverse = (inputs: input_t): bag_str_t =>
+// part1
+let parseEdges = (inputs: input_t): bag_str_t =>
   inputs
   ->Belt.Array.map(input => {
     let kv =
@@ -46,15 +41,16 @@ let parseReverse = (inputs: input_t): bag_str_t =>
       ->Js.String2.trim
       ->Js.String2.split("  contain ")
 
-    let vertices = kv[1]->parseSons
     let color = kv[0]
+    let contents = kv[1]->parseContents
 
-    vertices->Belt.Array.map(vertex => {
-      (vertex.color, color)
+    contents->Belt.Array.map(content => {
+      (color, content.color)
     })
   })
   ->Belt.Array.concatMany
 
+// part2
 let parse = (inputs: input_t): bags_t =>
   inputs->Belt.Array.map(input => {
     let kv =
@@ -64,45 +60,15 @@ let parse = (inputs: input_t): bags_t =>
       ->Js.String2.trim
       ->Js.String2.split("  contain ")
 
-    let contents = kv[1]->parseSons
+    let contents = kv[1]->parseContents
     let color = kv[0]
 
     {color: color, contents: contents}
   })
 
-let findTargetColorFromBags = (bags, targetColor) => {
-  bags->Belt.Map.String.getExn(targetColor)
-}
-
-let toUnique = (arr: array<string>): array<string> => {
+let toUniqueArray = (arr: array<string>): array<string> => {
   arr->Belt.Set.fromArray(~id=module(StrCmp))->Belt.Set.toArray
 }
-
-let getColors = (contents: array<node_t>): array<string> => contents->Belt.Array.map(c => c.color)
-
-let getColorCounts = (contents: array<node_t>): array<int> => contents->Belt.Array.map(c => c.count)
-
-let getColor = (node: node_t): string => node.color
-
-let isNotNoOtherFromMpde = (parsedAdjacents: array<node_t>) =>
-  parsedAdjacents->Belt.Array.keep(node => node.color !== "other")
-
-let isNotOtherFromColor = (colors: array<string>) => colors->Belt.Array.keep(c => c !== "other")
-
-let findAdjacentNodes = (targetColors, bags) => {
-  targetColors
-  ->Belt.Array.map(targetColor => bags->findTargetColorFromBags(targetColor))
-  ->Belt.Array.map(adjacent => adjacent->parseSons)
-  ->Belt.Array.concatMany
-}
-
-/*
- bags = [
-   {color: 'shiny gold', contents: [ { color: 'dark red', count: 2 } ] },
-   {color: 'dark red', contents: [ { color: 'dark orange', count: 2 } ] },
-   ...
-  ]
-*/
 
 let findBagWith = (bags: bags_t, targetColor) => {
   bags->Belt.Array.keepMap(bag => {
@@ -113,6 +79,21 @@ let findBagWith = (bags: bags_t, targetColor) => {
   })
 }
 
+// part 1
+let rec searchEdge = (bagStrs: bag_str_t, targetColor: color_t) => {
+  let foundColoredBags = bagStrs->Belt.Array.keepMap(((color, contentColor)) => {
+    switch contentColor == targetColor {
+    | true => Some(color)
+    | false => None
+    }
+  })
+
+  foundColoredBags->Belt.Array.reduce(foundColoredBags, (acc, foundColoredBag) => {
+    acc->Belt.Array.concat(bagStrs->searchEdge(foundColoredBag))
+  })
+}
+
+// part 2
 let rec search = (bags: bags_t, targetColor: color_t) => {
   let foundBag = bags->findBagWith(targetColor)->Belt.Array.get(0)
 
@@ -125,40 +106,21 @@ let rec search = (bags: bags_t, targetColor: color_t) => {
   }
 }
 
-let finalize = (sum: int) => sum - 1
+let finalizeP1 = arr => {
+  arr->toUniqueArray->Belt.Array.length
+}
 
-let getLength = arr => arr->Belt.Array.length
+let finalizeP2 = (sum: int) => sum - 1
 
 let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")
 
 let targetColor = "shiny gold"
 
-// let uniqueKeyColors = inputs->parse->Belt.Map.String.keysToArray->toUnique
-
-// uniqueKeyColors
-// ->Belt.Array.map(keyColor => {
-//   inputs->parse->search([keyColor], [])->Belt.Array.keep(v => v.color != "other")
-// })
-// ->Belt.Array.keepMap(r => {
-//   let thisArr = r->Belt.Array.keep(v => v.color != "other")
-//   // Js.log(("thisArr:", thisArr, thisArr->Belt.Array.length))
-//   // let tailColor = thisArr[(thisArr->Belt.Array.length) - 1]
-//   // tailColor
-//   // thisArr->Belt.List.fromArray->Belt.List.tail
-// })
-// ->Js.log
-
-// Part 1 # DOING
-// inputs
-// ->parseReverse
-// ->Js.log
+// Part 1
+inputs->parseEdges->searchEdge(targetColor)->finalizeP1->Js.log
 
 // Part 2
-inputs
-->parse
-->search(targetColor)
-->finalize
-->Js.log
+inputs->parse->search(targetColor)->finalizeP2->Js.log
 
 /*
 shiny gold
