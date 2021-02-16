@@ -5,6 +5,13 @@ From the sample: Immediately before the program would run an instruction a secon
 the value in the accumulator is 5.
 */
 
+/*
+TODO:
+comment:
+- 부호를 string 대신 value에 부호를 합쳐서 sign: (-) => value * -1
+- return를 state로 하도록 (tuple or record)
+*/
+
 type line_t = {
   index: int,
   operator: string, // acc, jmp, nop
@@ -51,7 +58,12 @@ module IntCmp = Belt.Id.MakeComparable({
 
 let includes = (arrs, el) => Belt.Set.fromArray(arrs, ~id=module(IntCmp))->Belt.Set.has(el)
 
-let rec operate = (instructions: instruction_t, thisIndex: int): int => {
+type state = {
+  currentValue: int,
+  currentIndex: int
+}
+
+let rec operate = (instructions: instruction_t, thisIndex: int): (int, int) => {
   // instructions->Belt.Array.map(instruction => {
   /*
         {
@@ -88,11 +100,16 @@ let rec operate = (instructions: instruction_t, thisIndex: int): int => {
       switch (instruction.operator, instruction.sign) {
       | ("nop", _) => {
           instructions->operate(thisIndex + 1)->ignore
-          acc
+          
+            currentValue: acc,
+            currentIndex: newIndex
+          }
         }
       | ("acc", "+") => {
-          instructions->operate(instruction.index + 1)->ignore
+          (
+          instructions->operate(instruction.index + 1)->ignore,
           acc + instruction.value
+          )
         }
       | ("acc", "-") => {
           instructions->operate(instruction.index - 1)->ignore
@@ -113,4 +130,7 @@ let rec operate = (instructions: instruction_t, thisIndex: int): int => {
 }
 
 let instructions =
-  Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")->parse->operate(0)->Js.log
+  Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")
+  ->parse
+  // ->operate(0)
+  ->Js.log
