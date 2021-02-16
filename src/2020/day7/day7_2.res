@@ -99,18 +99,16 @@ let rec search = (bags: bags_t, targetColor: color_t) => {
 
   switch foundBag {
   | Some(foundBag) =>
-    foundBag.contents->Belt.Array.reduce(1, (acc, content) => {
-      acc + bags->search(content.color) * content.count
+    foundBag.contents->Belt.Array.reduce(0, (acc, content) => {
+      acc + content.count + bags->search(content.color) * content.count
     })
-  | None => 0
+  | None => 1
   }
 }
 
 let finalizeP1 = arr => {
   arr->toUniqueArray->Belt.Array.length
 }
-
-let finalizeP2 = (sum: int) => sum - 1
 
 let inputs = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")
 
@@ -120,7 +118,7 @@ let targetColor = "shiny gold"
 inputs->parseEdges->searchEdge(targetColor)->finalizeP1->Js.log
 
 // Part 2
-inputs->parse->search(targetColor)->finalizeP2->Js.log
+inputs->parse->search(targetColor)->Js.log
 
 /*
 shiny gold
