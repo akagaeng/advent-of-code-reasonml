@@ -5,12 +5,15 @@ From the sample: Immediately before the program would run an instruction a secon
 the value in the accumulator is 5.
 */
 
-type op = {
-  line: int,
+type line = {
+  index: int,
   operation: string, // acc, jmp, nop
   sign: string, // + / -
   value: int,
+  count: int,
 }
+
+type operation = array<line>
 
 let splitSignValue = signValue => {
   let re = %re("/(\+|\-)([0-9]+)/")
@@ -25,13 +28,19 @@ let splitSignValue = signValue => {
   }
 }
 
-let parse = (strs: array<string>) => {
-  strs->Belt.Array.map(str => {
+let parse = (strs: array<string>): operation => {
+  strs->Belt.Array.mapWithIndex((i, str) => {
     let line = str->Js.String2.split(" ")
     let (operation, signValue) = (line[0], line[1])
     let (sign, value) = splitSignValue(signValue)
 
-    (operation, sign, value)
+    {
+      index: i,
+      operation: operation,
+      sign: sign->Belt.Option.getExn,
+      value: value->Belt.Option.getExn->Belt.Int.fromString->Belt.Option.getExn,
+      count: 0,
+    }
   })
 }
 
