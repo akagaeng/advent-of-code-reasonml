@@ -106,9 +106,67 @@ let rec operate = (instructions: instructions_t, thisState: state_t): state_t =>
   }
 }
 
+let findInstructionWithNopJmp = instructions =>
+  instructions->Belt.Array.keep(instruction => {
+    switch instruction.operator {
+    | "acc" => true
+    | "jmp" => false
+    | "nop" => true
+    | _ => false
+    }
+  })
+
+let swapNopJmp = (instructions: instructions_t, thisState: state_t): instructions_t => {
+  let instructionWithNopJmps = instructions->findInstructionWithNopJmp
+  let indexToSwap = instructionWithNopJmps[thisState.currentIndex].index
+  let swapExectution = instructions->Belt.Array.set(
+    indexToSwap,
+    {
+      ...instructions[indexToSwap],
+      operator: instructions[indexToSwap].operator == "acc" ? "jmp" : "acc",
+    },
+  )
+
+  if swapExectution != true {
+    Js.Exn.raiseError("Failed to execute current instruction!")
+  }
+
+  instructions
+}
+
+let rec operateWithFixedInstruction = (
+  instructions: instructions_t,
+  thisState: state_t,
+): state_t => {
+  let instructionLastIndex = instructions->Belt.Array.length - 1
+
+  let originalInstructions = instructions->Belt.Array.copy
+  let newInstructions = instructions->swapNopJmp(thisState)
+  let finalState = newInstructions->operate(thisState)
+
+  try {
+    switch finalState.currentIndex === instructionLastIndex {
+    | true => finalState
+    | false =>
+      originalInstructions->operateWithFixedInstruction({
+        ...thisState,
+        currentIndex: thisState.currentIndex + 1,
+      })
+    }
+  } catch {
+  | _ => finalState
+  }
+}
+
 let initialState: state_t = {currentIndex: 0, currentValue: 0}
 
-let instructions =
-  Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse->operate(initialState)
+// Common
+let instructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
 
-instructions.currentValue->Js.log
+// Part 1
+let finalStateP1 = instructions->operate(initialState)
+finalStateP1.currentValue->Js.log
+
+// Part 2
+let finalStateP2 = instructions->operateWithFixedInstruction(initialState)
+finalStateP2.currentValue->Js.log
