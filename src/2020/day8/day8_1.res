@@ -138,21 +138,15 @@ let rec operateWithFixedInstruction = (
   instructions: instructions_t,
   thisState: state_t,
 ): state_t => {
-  let instructionLastIndex = instructions->Belt.Array.length - 1
-
   let originalInstructions = instructions->Belt.Array.copy
   let newInstructions = instructions->swapNopJmp(thisState)
   let finalState = newInstructions->operate(thisState)
 
   try {
-    switch finalState.currentIndex === instructionLastIndex {
-    | true => finalState
-    | false =>
-      originalInstructions->operateWithFixedInstruction({
-        ...thisState,
-        currentIndex: thisState.currentIndex + 1,
-      })
-    }
+    originalInstructions->operateWithFixedInstruction({
+      ...thisState,
+      currentIndex: thisState.currentIndex + 1,
+    })
   } catch {
   | _ => finalState
   }
@@ -161,7 +155,7 @@ let rec operateWithFixedInstruction = (
 let initialState: state_t = {currentIndex: 0, currentValue: 0}
 
 // Common
-let instructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
+let instructions = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")->parse
 
 // Part 1
 let finalStateP1 = instructions->operate(initialState)
