@@ -81,29 +81,36 @@ let rec operate = (instructions: instructions_t, thisState: state_t): state_t =>
     Js.Exn.raiseError("Failed to execute current instruction!")
   }
 
-  if instructions[thisState.currentIndex].count >= 2 {
-    thisState
-  } else {
-    switch thisInstruction.operator {
-    | "nop" =>
-      instructions->operate({
-        currentIndex: thisState.currentIndex + 1,
-        currentValue: thisState.currentValue,
-      })
-    | "acc" =>
-      instructions->operate({
-        currentIndex: thisInstruction.index + 1,
-        currentValue: thisState.currentValue + thisInstruction.value,
-      })
-    | "jmp" =>
-      instructions->operate({
-        currentIndex: thisInstruction.index + thisInstruction.value,
-        currentValue: thisState.currentValue,
-      })
-    | _ => {
-        currentIndex: thisState.currentIndex,
-        currentValue: thisState.currentValue,
+  try {
+    if instructions[thisState.currentIndex].count >= 2 {
+      thisState
+    } else {
+      switch thisInstruction.operator {
+      | "nop" =>
+        instructions->operate({
+          currentIndex: thisState.currentIndex + 1,
+          currentValue: thisState.currentValue,
+        })
+      | "acc" =>
+        instructions->operate({
+          currentIndex: thisInstruction.index + 1,
+          currentValue: thisState.currentValue + thisInstruction.value,
+        })
+      | "jmp" =>
+        instructions->operate({
+          currentIndex: thisInstruction.index + thisInstruction.value,
+          currentValue: thisState.currentValue,
+        })
+      | _ => {
+          currentIndex: thisState.currentIndex,
+          currentValue: thisState.currentValue,
+        }
       }
+    }
+  } catch {
+  | _ => {
+      currentIndex: thisState.currentIndex,
+      currentValue: thisState.currentValue + thisInstruction.value,
     }
   }
 }
@@ -117,6 +124,26 @@ let findInstructionWithNopJmp = instructions =>
     | _ => false
     }
   })
+
+let replace = (instructions: instructions_t, replaceAt: int): instructions_t => {
+  let newInstructions = instructions->Belt.Array.copy
+  let replaceDone = newInstructions->Belt.Array.set(
+    replaceAt,
+    {
+      ...newInstructions[replaceAt],
+      operator: newInstructions[replaceAt].operator == "nop" ? "jmp" : "nop",
+    },
+  )
+
+  if replaceDone != true {
+    Js.Exn.raiseError("Failed to execute current instruction!")
+  }
+
+  newInstructions
+}
+
+let countReset = (instructions: instructions_t): instructions_t =>
+  instructions->Belt.Array.map(v => {...v, count: 0})
 
 let swapNopJmp = (
   instructions: instructions_t,
@@ -140,30 +167,30 @@ let swapNopJmp = (
   instructions
 }
 
-let rec operateWithFixedInstruction = (
-  instructions: instructions_t,
-  instructionWithNopJmps: instructions_t,
-  thisState: state_t,
-): state_t => {
-  let originalInstructions = instructions->Belt.Array.copy
-  let newInstructions = instructions->swapNopJmp(instructionWithNopJmps, thisState)
-  let finalState = newInstructions->operate(initialState)
+// let rec operateWithFixedInstruction = (
+//   instructions: instructions_t,
+//   instructionWithNopJmps: instructions_t,
+//   thisState: state_t,
+// ): state_t => {
+//   let originalInstructions = instructions->Belt.Array.copy
+//   let newInstructions = instructions->swapNopJmp(instructionWithNopJmps, thisState)
+//   let finalState = newInstructions->operate(initialState)
 
-  try {
-    originalInstructions->operateWithFixedInstruction(
-      instructionWithNopJmps,
-      {
-        currentValue: thisState.currentValue,
-        currentIndex: thisState.currentIndex + 1,
-      },
-    )
-  } catch {
-  | _ => finalState
-  }
-}
+//   try {
+//     originalInstructions->operateWithFixedInstruction(
+//       instructionWithNopJmps,
+//       {
+//         currentValue: thisState.currentValue,
+//         currentIndex: thisState.currentIndex + 1,
+//       },
+//     )
+//   } catch {
+//   | _ => finalState
+//   }
+// }
 
 // Common
-let instructions = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")->parse
+let instructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
 
 let instructionWithNopJmps = instructions->findInstructionWithNopJmp
 
@@ -171,21 +198,24 @@ let instructionWithNopJmps = instructions->findInstructionWithNopJmp
 let finalStateP1 = instructions->operate(initialState)
 finalStateP1.currentValue->Js.log
 
-// [
-//   {index: 0, operator: "nop", value: 0, count: 0},
-//   {index: 1, operator: "acc", value: 1, count: 0},
-//   {index: 2, operator: "jmp", value: 4, count: 0},
-//   {index: 3, operator: "acc", value: 3, count: 0},
-//   {index: 4, operator: "jmp", value: -3, count: 0},
-//   {index: 5, operator: "acc", value: -99, count: 0},
-//   {index: 6, operator: "acc", value: 1, count: 0},
-//   {index: 7, operator: "nop", value: -4, count: 0},
-//   {index: 8, operator: "acc", value: 6, count: 0},
-// ]
-
 // Part 2
 // let finalStateP2 =
 //   instructions
 //   ->operateWithFixedInstruction(instructionWithNopJmps, initialState)
 //   // finalStateP2.currentValue
 //   ->Js.log
+
+// Part 2 v2
+
+let replaceIndex = instructionWithNopJmps->Belt.Array.map(v => v.index)
+
+let finalStateP2 = replaceIndex->Belt.Array.map(replaceAt => {
+  let newInstructions = instructions->replace(replaceAt)->countReset
+  newInstructions->operate(initialState)
+})
+
+// instructions->Belt.Array.length->Js.log : 1548
+// finalStateP2->Belt.Array.length->Js.log : 647
+// finalStateP2->Js.log : 315
+
+// finalStateP2[finalStateP2->Belt.Array.length - 1].currentValue->Js.log
