@@ -1,18 +1,23 @@
 type state_t = {
   currentIndex: int,
   currentValue: int,
+  visitIndexes: array<int>,
+  error: string, // "InfiniteLoop" | "LastIndex"
 }
 
 type instruction_t = {
   index: int,
   operator: string, // acc, jmp, nop
   value: int, // w/ sign
-  count: int,
 }
 
 type instructions_t = array<instruction_t>
 
-let initialState: state_t = {currentIndex: 0, currentValue: 0}
+exception LastIndex(state_t)
+exception InfiniteLoop(state_t)
+exception Other
+
+let initialState: state_t = {currentIndex: 0, currentValue: 0, visitIndexes: [], error: ""}
 
 let splitSignValue = signValue => {
   let re = %re("/(\+|\-)([0-9]+)/")
@@ -47,7 +52,6 @@ let parse = (strs: array<string>): instructions_t => {
       index: i,
       operator: operator,
       value: value->Belt.Option.getExn,
-      count: 0,
     }
   })
 }
@@ -59,56 +63,60 @@ module IntCmp = Belt.Id.MakeComparable({
 
 let includes = (arrs, el) => Belt.Set.fromArray(arrs, ~id=module(IntCmp))->Belt.Set.has(el)
 
-let countUpExecuted = (instructions: instructions_t, thisState: state_t): bool => {
-  instructions->Belt.Array.set(
-    thisState.currentIndex,
-    {
-      ...instructions[thisState.currentIndex],
-      count: instructions[thisState.currentIndex].count + 1,
-    },
-  )
+let isVisited = thisState => {
+  thisState.visitIndexes->Belt.Array.some(visitIndex => {visitIndex == thisState.currentIndex}) ==
+    true
 }
 
 let rec operate = (originalInstructions: instructions_t, thisState: state_t): state_t => {
   let instructions = originalInstructions->Belt.Array.copy
+  let thisInstruction = instructions->Belt.Array.getExn(thisState.currentIndex)
 
   try {
-    let thisInstruction = instructions->Belt.Array.getExn(thisState.currentIndex)
-    let countUpExecution = countUpExecuted(instructions, thisState)
-
-    if countUpExecution != true {
-      Js.Exn.raiseError("Failed to execute current instruction!")
-    }
-
-    // case: out of index 
-    if instructions[thisState.currentIndex].count >= 2 {
-      // thisState
-      Js.Exn.raiseError("Failed to execute current instruction!")
+    if isVisited(thisState) {
+      raise(
+        InfiniteLoop({
+          ...thisState,
+          visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
+          error: "InfiniteLoop",
+        }),
+      )
+    } else if thisState.currentIndex == instructions->Belt.Array.length - 1 {
+      raise(
+        LastIndex({
+          ...thisState,
+          visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
+          error: "LastIndex",
+        }),
+      )
     } else {
       switch thisInstruction.operator {
       | "nop" =>
         instructions->operate({
+          ...thisState,
           currentIndex: thisState.currentIndex + 1,
-          currentValue: thisState.currentValue,
+          visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
         })
       | "acc" =>
         instructions->operate({
+          ...thisState,
           currentIndex: thisInstruction.index + 1,
           currentValue: thisState.currentValue + thisInstruction.value,
+          visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
         })
       | "jmp" =>
         instructions->operate({
+          ...thisState,
           currentIndex: thisInstruction.index + thisInstruction.value,
-          currentValue: thisState.currentValue,
+          visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
         })
-      | _ => {
-          currentIndex: thisState.currentIndex,
-          currentValue: thisState.currentValue,
-        }
+      | _ => thisState
       }
     }
   } catch {
-  | _ => Js.Exn.raiseError("Failed to execute current instruction!")
+  | InfiniteLoop(thisState) => thisState
+  | LastIndex(thisState) => thisState
+  | Other => raise(Other)
   }
 }
 
@@ -173,11 +181,15 @@ finalStateP1.currentValue->Js.log
 // Part 2
 let replaceIndex = instructionWithNopJmps->Belt.Array.map(v => v.index)
 
-let finalStateP2 = replaceIndex->Belt.Array.map(replaceAt => {
-  let instructions = originalInstructions->replace(replaceAt)
-  // Js.log(instructions)
-  instructions->operate(initialState)
-})
+let filterLastIndexError = finalStateP2 =>
+  finalStateP2->Belt.Array.keep(s => s.error == "LastIndex")->Belt.Array.getExn(0)
 
-finalStateP2[finalStateP2->Belt.Array.length - 1]->Js.log
-// .currentValue
+let finalStateP2 =
+  replaceIndex
+  ->Belt.Array.map(replaceAt => {
+    let instructions = originalInstructions->replace(replaceAt)
+    instructions->operate(initialState)
+  })
+  ->filterLastIndexError
+
+finalStateP2.currentValue->Js.log
