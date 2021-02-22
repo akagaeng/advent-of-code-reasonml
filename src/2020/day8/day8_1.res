@@ -100,14 +100,14 @@ let rec operate = (originalInstructions: instructions_t, thisState: state_t): st
       | "acc" =>
         instructions->operate({
           ...thisState,
-          currentIndex: thisInstruction.index + 1,
+          currentIndex: thisState.currentIndex + 1,
           currentValue: thisState.currentValue + thisInstruction.value,
           visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
         })
       | "jmp" =>
         instructions->operate({
           ...thisState,
-          currentIndex: thisInstruction.index + thisInstruction.value,
+          currentIndex: thisState.currentIndex + thisInstruction.value,
           visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.currentIndex]),
         })
       | _ => thisState
