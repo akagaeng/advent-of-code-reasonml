@@ -1,7 +1,7 @@
 type terminate_t =
-  | Inf // infinite loop
-  | Ooi // out of index
-  | No // not terminated
+  | InfiniteLoop // infinite loop
+  | OutOfIndex // out of index
+  | NotYet // not terminated
 
 type state_t = {
   idx: int,
@@ -17,7 +17,7 @@ type instruction_t =
 
 type instructions_t = array<instruction_t>
 
-let initialState: state_t = {idx: 0, value: 0, terminateState: No, visitIndexes: []}
+let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitIndexes: []}
 
 let splitSignValue = signValue => {
   let re = %re("/(\+|\-)([0-9]+)/")
@@ -95,15 +95,13 @@ let isVisited = (thisState): bool => {
   thisState.visitIndexes->Belt.Array.some(visitIndex => {visitIndex == thisState.idx}) == true
 }
 
-// Inf // infinite loop
-// Ooi // out of index
 let terminateCheck = (instructions, thisState: state_t): terminate_t => {
   if thisState->isVisited == true {
-    Inf
+    InfiniteLoop
   } else if thisState.idx == instructions->Belt.Array.length - 1 {
-    Ooi
+    OutOfIndex
   } else {
-    No
+    NotYet
   }
 }
 
@@ -144,9 +142,9 @@ let rec execute = (originalInstructions: instructions_t, thisState: state_t): st
   // Js.log((">>newState:", newState))
 
   switch newState.terminateState {
-  | Inf
-  | Ooi => thisState
-  | No => instructions->execute(newState) // newState  not terminated
+  | InfiniteLoop
+  | OutOfIndex => thisState
+  | NotYet => instructions->execute(newState) // newState  not terminated
   }
 }
 
@@ -245,13 +243,8 @@ let makeCandidates = (originalInstructions: instructions_t): array<instructions_
   let instructions = originalInstructions->Belt.Array.copy
   // let replaceDone = instructions->Belt.Array.set()
 
-  let jmpNopInstructions = instructions->Belt.Array.keepMap(instruction => {
-    switch instruction {
-    | Jmp(_)
-    | Nop =>
-      Some(instruction)
-    | _ => None
-    }
+  let jmpNopInstructions = instructions->Belt.Array.getBy(instruction => {
+    instruction == Jmp(_) || instruction == Nop
   })
 
   jmpNopInstructions
