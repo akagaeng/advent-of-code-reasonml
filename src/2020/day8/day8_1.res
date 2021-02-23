@@ -5,18 +5,11 @@ type state_t = {
   error: string, // "InfiniteLoop" | "LastIndex"
 }
 
-// type instruction_t = {
-//   index: int,
-//   operator: string, // acc, jmp, nop
-//   value: int, // w/ sign
-// }
-
-type element_t = (int, int)
-
-type instruction_t =
-  | Acc(element_t)
-  | Jmp(element_t)
-  | Nop(element_t)
+type instruction_t = {
+  index: int,
+  operator: string, // acc, jmp, nop
+  value: int, // w/ sign
+}
 
 type instructions_t = array<instruction_t>
 
