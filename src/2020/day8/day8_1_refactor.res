@@ -184,13 +184,13 @@ let findInstructionWithNopJmp = instructions =>
   })
 
 // Common
-let originalInstructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
+let originalInstructions = Node.Fs.readFileAsUtf8Sync("./sample.txt")->Js.String2.split("\n")->parse
 
 // let instructionWithNopJmps = originalInstructions->findInstructionWithNopJmp
 
 // Part 1
-let out = originalInstructions->execute(initialState)
-out.value->Js.log
+let outP1 = originalInstructions->execute(initialState)
+outP1.value->Js.log
 
 // try {
 //   let _ = originalInstructions->operate(initialState)
@@ -241,35 +241,29 @@ out.value->Js.log
 //   })
 // }
 
-let makeCandidates = (instructions: instructions_t): array<instructions_t> => {
-  instructions->Belt.Array.keepMap(instruction => {
+let makeCandidates = (originalInstructions: instructions_t): array<instructions_t> => {
+  let instructions = originalInstructions->Belt.Array.copy
+  // let replaceDone = instructions->Belt.Array.set()
+
+  let jmpNopInstructions = instructions->Belt.Array.keepMap(instruction => {
     switch instruction {
-    | Jmp(value) =>
-      Some(
-        instructions->Belt.Array.mapWithIndex((i, v) => {
-          if i == el.index {
-            Nop(value)
-          } else {
-            v
-          }
-        }),
-      )
-    | Nop(value) =>
-      Some(
-        instructions->Belt.Array.mapWithIndex((i, v) => {
-          if i == el.index {
-            Jmp(el)
-          } else {
-            v
-          }
-        }),
-      )
-    | Acc(_) => None
+    | Jmp(_)
+    | Nop =>
+      Some(instruction)
+    | _ => None
     }
   })
+
+  jmpNopInstructions
+
+  // jmpNopInstructions->Belt.Array.map(jmpNopInstruction => jmpNopInstruction)
 }
 
-// let candidateInstructionsArr = originalInstructions->makeCandidates
+let outP2 = originalInstructions->makeCandidates
+outP2->Js.log
+
+// let candidateInstructionsArr = originalInstructions->makeCandidates(state)
+// candidateInstructionsArr->Js.log
 
 // let outP2 = candidateInstructionsArr->Belt.Array.map(candidateInstructions => {
 //   try {
