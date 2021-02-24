@@ -7,7 +7,7 @@ type state_t = {
   idx: int,
   value: int,
   terminateState: terminate_t,
-  visitIndexes: array<int>,
+  visitIndexes: list<int>,
 }
 
 type instruction_t =
@@ -17,7 +17,7 @@ type instruction_t =
 
 type instructions_t = array<instruction_t>
 
-let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitIndexes: []} // visitIndexes -> List, Set
+let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitIndexes: list{}}
 
 let splitSignValue = signValue => {
   let re = %re("/(\+|\-)([0-9]+)/")
@@ -58,7 +58,8 @@ let parse = (strs: array<string>): instructions_t => {
 }
 
 let isVisited = (thisState): bool => {
-  thisState.visitIndexes->Belt.Array.some(visitIndex => {visitIndex == thisState.idx}) == true
+  // thisState.visitIndexes->Belt.Array.some(visitIndex => {visitIndex == thisState.idx}) == true
+  thisState.visitIndexes->Belt.List.has(thisState.idx, (a, b) => a == b)
 }
 
 let terminateCheck = (instructions, thisState: state_t): terminate_t => {
@@ -87,19 +88,19 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
       idx: thisState.idx + 1,
       value: thisState.value + value,
       terminateState: terminateState,
-      visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.idx]),
+      visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
     }
   | Some(Jmp(value)) => {
       ...thisState,
       idx: thisState.idx + value,
       terminateState: terminateState,
-      visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.idx]),
+      visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
     }
   | Some(Nop) => {
       ...thisState,
       idx: thisState.idx + 1,
       terminateState: terminateState,
-      visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.idx]),
+      visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
     }
   }
 }
