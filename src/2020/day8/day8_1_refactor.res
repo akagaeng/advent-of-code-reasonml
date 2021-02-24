@@ -57,10 +57,8 @@ let parse = (strs: array<string>): instructions_t => {
   })
 }
 
-let isVisited = (thisState): bool => {
-  // thisState.visitIndexes->Belt.Array.some(visitIndex => {visitIndex == thisState.idx}) == true
+let isVisited = (thisState): bool =>
   thisState.visitIndexes->Belt.List.has(thisState.idx, (a, b) => a == b)
-}
 
 let terminateCheck = (instructions, thisState: state_t): terminate_t => {
   if thisState->isVisited == true {
@@ -78,7 +76,7 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
 
   switch thisInstruction {
   | None =>
-    terminateState == InfiniteLoop
+    terminateState === OutOfIndex
       ? {
           ...thisState,
           terminateState: terminateState,
@@ -106,20 +104,15 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
 }
 
 let rec execute = (instructions: instructions_t, thisState: state_t): state_t => {
-  let newState = run(instructions, thisState)
-  switch newState.terminateState {
+  switch thisState.terminateState {
   | InfiniteLoop
   | OutOfIndex => thisState
-  | NotYet => instructions->execute(newState) // newState  not terminated
+  | NotYet => {
+      let newState = run(instructions, thisState)
+      instructions->execute(newState)
+    }
   }
 }
-
-// Common
-let originalInstructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
-
-// Part 1
-let outP1 = originalInstructions->execute(initialState)
-outP1.value->Js.log
 
 let makeCandidates = (instructions: instructions_t): array<instructions_t> => {
   let swap = (instuctions, index, instruction: instruction_t) => {
@@ -137,14 +130,27 @@ let makeCandidates = (instructions: instructions_t): array<instructions_t> => {
   })
 }
 
-let outP2 = originalInstructions
-->makeCandidates
-->Belt.Array.map(candidate => candidate->execute(initialState))
-->Belt.Array.keepMap(result => {
-  switch result.terminateState {
-  | OutOfIndex => Some(result)
-  | _ => None
-  }
-})
+let onlyOutOfIndexes = (resultStates: array<state_t>) => {
+  resultStates->Belt.Array.keepMap(result => {
+    switch result.terminateState {
+    | OutOfIndex => Some(result)
+    | _ => None
+    }
+  })
+}
+
+// Common
+let originalInstructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
+
+// Part 1
+let outP1 = originalInstructions->execute(initialState)
+outP1.value->Js.log
+
+// Part 2
+let outP2 =
+  originalInstructions
+  ->makeCandidates
+  ->Belt.Array.map(candidate => candidate->execute(initialState))
+  ->onlyOutOfIndexes
 
 outP2[0].value->Js.log
