@@ -17,7 +17,7 @@ type instruction_t =
 
 type instructions_t = array<instruction_t>
 
-let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitIndexes: []}
+let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitIndexes: []} // visitIndexes -> List, Set
 
 let splitSignValue = signValue => {
   let re = %re("/(\+|\-)([0-9]+)/")
@@ -76,6 +76,10 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
   let thisInstruction = instructions->Belt.Array.get(thisState.idx)
 
   switch thisInstruction {
+  | None => {
+      ...thisState,
+      terminateState: terminateState,
+    }
   | Some(Acc(value)) => {
       idx: thisState.idx + 1,
       value: thisState.value + value,
@@ -94,20 +98,15 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
       terminateState: terminateState,
       visitIndexes: thisState.visitIndexes->Belt.Array.concat([thisState.idx]),
     }
-  | _ => {
-      ...thisState,
-      terminateState: terminateState,
-    }
   }
 }
 
-let rec execute = (originalInstructions: instructions_t, thisState: state_t): state_t => {
-  let instructions = originalInstructions->Belt.Array.copy
-
-  switch thisState.terminateState {
+let rec execute = (instructions: instructions_t, thisState: state_t): state_t => {
+  let newState = run(instructions, thisState)
+  switch newState.terminateState {
   | InfiniteLoop
   | OutOfIndex => thisState
-  | NotYet => instructions->execute(run(instructions, thisState)) // newState  not terminated
+  | NotYet => instructions->execute(newState) // newState  not terminated
   }
 }
 
@@ -119,18 +118,16 @@ let outP1 = originalInstructions->execute(initialState)
 outP1.value->Js.log
 
 let makeCandidates = (instructions: instructions_t): array<instructions_t> => {
+  let swap = (instuctions, index, instruction: instruction_t) => {
+    let newInstructions = instuctions->Belt.Array.copy
+    let _setValue = newInstructions->Belt.Array.set(index, instruction)
+    newInstructions
+  }
+
   instructions->Belt.Array.reduceWithIndex([], (acc, x, i) => {
     switch x {
-    | Jmp(_) => {
-        let newInstructions = originalInstructions->Belt.Array.copy
-        let _setValue = newInstructions->Belt.Array.set(i, Nop)
-        acc->Belt.Array.concat([newInstructions])
-      }
-    | Nop => {
-        let newInstructions = originalInstructions->Belt.Array.copy
-        let _setValue = newInstructions->Belt.Array.set(i, Jmp(i))
-        acc->Belt.Array.concat([newInstructions])
-      }
+    | Jmp(_) => acc->Belt.Array.concat([instructions->swap(i, Nop)])
+    | Nop => acc->Belt.Array.concat([instructions->swap(i, Jmp(i))])
     | _ => acc
     }
   })
