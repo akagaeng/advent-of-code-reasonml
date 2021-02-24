@@ -76,10 +76,13 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
   let thisInstruction = instructions->Belt.Array.get(thisState.idx)
 
   switch thisInstruction {
-  | None => {
-      ...thisState,
-      terminateState: terminateState,
-    }
+  | None =>
+    terminateState == InfiniteLoop
+      ? {
+          ...thisState,
+          terminateState: terminateState,
+        }
+      : thisState
   | Some(Acc(value)) => {
       idx: thisState.idx + 1,
       value: thisState.value + value,
