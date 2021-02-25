@@ -3,11 +3,11 @@ type inputs_t = array<array<string>>
 type coord_t = {x: int, y: int}
 
 type position_t =
-  | Floor
   | Empty
   | Occupied
+  | Floor
 
-type state_t = {complete: bool}
+type state_t = {complete: bool, changedPositions: list<coord_t>}
 
 type seat_t = {
   coord: coord_t,
@@ -21,9 +21,7 @@ let inputs: inputs_t =
   ->Js.String2.split("\n")
   ->Belt.Array.map(row => row->Js.String2.split(""))
 
-let seatWidth = inputs->Belt.Array.length
-
-let initialState: state_t = {complete: false}
+let initialState: state_t = {complete: false, changedPositions: list{}}
 
 let parse = (inputs: inputs_t): seats_t => {
   inputs
@@ -31,9 +29,9 @@ let parse = (inputs: inputs_t): seats_t => {
     row->Belt.Array.mapWithIndex((y, positionCode) => {
       let coord = {x: x, y: y}
       switch positionCode {
-      | "." => {coord: coord, position: Floor}
       | "L" => {coord: coord, position: Empty}
       | "#" => {coord: coord, position: Occupied}
+      | "." => {coord: coord, position: Floor}
       | _ => raise(Not_found)
       }
     })
@@ -41,62 +39,126 @@ let parse = (inputs: inputs_t): seats_t => {
   ->Belt.Array.concatMany
 }
 
-// let nextCoord = (seat: seat_t, thisState: state_t): state_t => {
-//   switch (x, y) {
+/*
 
-//   }
+1. Empty(L): 4방향에 Occupied 없으면 -> Occupied
+2. Occupied (#): 4개 이상의 인접 seat가 Occupied인 경우 -> Empty
+3. Floor(.): 변화 없음
 
-// }
+*/
+let move = (seats, thisState: state_t): state_t => {
+  let findPositionFromCoord = (seats: seats_t, coord: coord_t) => {
+    seats->Belt.Array.getBy(x => x.coord == coord)
+  }
 
-let getValueAt = (seats: seats_t, thisState: state_t) => {
-  // seats->Belt.List.getBy(c =>
-  //   switch c {
-  //   | Floor(v) => Floor(v)
-  //   | Empty(v) => Empty(v)
-  //   | Occupied(v) => Occupied(v)
-  //   }
-  // )
+  let makeAdjacentCoords = (thisCoord: coord_t): array<coord_t> => {
+    let {x, y} = thisCoord
+    [
+      {x: x - 1, y: y + 1},
+      {x: x + 0, y: y + 1},
+      {x: x + 1, y: y + 1},
+      {x: x - 1, y: y + 0},
+      {x: x + 1, y: y + 0},
+      {x: x - 1, y: y - 1},
+      {x: x + 0, y: y - 1},
+      {x: x + 1, y: y - 1},
+    ]
+  }
 
-  seats[0]
+  let getOccupiedCounts = (seats: seats_t, thisSeat: seat_t): int => {
+    let adjacentCoords: array<coord_t> = thisSeat.coord->makeAdjacentCoords
+    // calculate occupied counts
+    Js.log(("adjacentCoords:", adjacentCoords))
+    let occupiedCounts = adjacentCoords->Belt.Array.reduce(0, (acc, adjacentCoord) => {
+      let thisPosition = seats->findPositionFromCoord(adjacentCoord)
+      // thisPosition
+      Js.log(("thisPosition", thisPosition))
+      switch thisPosition {
+      | Some(v) => {
+          Js.log(("v.position", v.position))
+
+          switch v.position {
+          | Occupied => {
+              Js.log(("Occupied!!", acc))
+              acc + 1
+            }
+          | _ => acc
+          }
+        }
+      | None => acc
+      }
+      // 1
+    })
+
+    // 10
+    // occupiedCounts
+    occupiedCounts
+  }
+
+  let findNextPosition = (seats: seats_t, thisSeat: seat_t): position_t => {
+    let occupiedCount = seats->getOccupiedCounts(thisSeat)
+    Js.log(("occupiedCount:", occupiedCount))
+    if occupiedCount == 0 {
+      Occupied
+    } else if occupiedCount >= 4 {
+      Empty
+    } else {
+      thisSeat.position
+    }
+  }
+
+  let changePosition = (seat: seat_t): seat_t => {
+    switch seat.position {
+    | Empty
+    | Occupied => {...seat, position: findNextPosition(seats, seat)}
+    | Floor => {...seat, position: Floor} //
+    }
+  }
+
+  let isChanged = (prevPos: seat_t, thisPos: seat_t): bool => prevPos == thisPos
+
+  let hasNoChangedPositions = (changedPositions: list<coord_t>): bool =>
+    changedPositions->Belt.List.length < 1
+
+  let changedPositions = seats->Belt.Array.reduce(list{}, (acc, seat) => {
+    let newSeat = seat->changePosition
+    // Js.log((" seat (old/new)", seat, newSeat))
+
+    switch isChanged((seat: seat_t), (newSeat: seat_t)) {
+    | false => acc
+    | true => acc->Belt.List.add(seat.coord)
+    }
+  })
+
+  let isComplete = changedPositions->hasNoChangedPositions == true ? true : false
+
+  {
+    complete: isComplete,
+    changedPositions: changedPositions,
+  }
 }
 
-let update = (seats, thisState: state_t) => {
-  // 상태 업데이트 - seate의 state를 체크
-  // let seatWidth = inputs[0]->Belt.Array.length
+let isCompleted = (thisState: state_t): bool => thisState.complete == true
 
-  // Js.log(seatWidth)
-
-  // switch thisState.coord {
-
-  Js.log(("thisState:", thisState))
-
-  seats->getValueAt(thisState)
-
-  // }
-  // seatWidth
-  // seats
-}
-
-let move = (seats: seats_t, thisState: state_t) => {
-  // 현재 상태만 체크 (thisState가 움직일 게 없는지만 확인)
-  // switch thisState.complete {
-  // | false =>
-
-  Js.log(("thisState:", thisState))
-  let nextState = update(seats, thisState)
-  nextState
-  // | true => thisState
-  // }
-  // seats
+let rec check = (seats: seats_t, thisState: state_t) => {
+  switch thisState->isCompleted {
+  | true => seats
+  | false => {
+      let nextState = seats->move(thisState)
+      // seats->check(nextState)
+      seats->check(nextState)
+      // nextState
+    }
+  }
 }
 
 let seats = inputs->parse
-seats->move(initialState)->Js.log
+seats->check(initialState)->Js.log
 
 /*
 # Rules
   > Adjacent seat 체크: 근처 8방향 (대각선 포함!)
-1. Empty(L): 4방향에 Occupied 없으면 -> Occupied
+1. Empty(L): Occupied 0개 -> Occupied
 2. Occupied (#): 4개 이상의 인접 seat가 Occupied인 경우 -> Empty
 3. Floor(.): 변화 없음
 */
