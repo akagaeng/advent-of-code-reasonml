@@ -2,14 +2,19 @@ type inputs_t = array<array<string>>
 
 type coord_t = {x: int, y: int}
 
-type seat_t =
+type position_t =
   | Floor
   | Empty
   | Occupied
 
-type state_t = {coord: coord_t, complete: bool}
+type state_t = {complete: bool}
 
-type seats_t = array<{coord: coord_t, seat: seat_t}>
+type seat_t = {
+  coord: coord_t,
+  position: position_t,
+}
+
+type seats_t = array<seat_t>
 
 let inputs: inputs_t =
   Node.Fs.readFileAsUtf8Sync("./sample.txt")
@@ -18,17 +23,17 @@ let inputs: inputs_t =
 
 let seatWidth = inputs->Belt.Array.length
 
-let initialState: state_t = {coord: {x: 0, y: 0}, complete: false}
+let initialState: state_t = {complete: false}
 
-let parse = (inputs: inputs_t): state_t => {
+let parse = (inputs: inputs_t): seats_t => {
   inputs
   ->Belt.Array.mapWithIndex((x, row) => {
     row->Belt.Array.mapWithIndex((y, positionCode) => {
       let coord = {x: x, y: y}
       switch positionCode {
-      | "." => {seat: Floor, coord: coord}
-      | "L" => {seat: Empty, coord: coord}
-      | "#" => {seat: Occupied, coord: coord}
+      | "." => {coord: coord, position: Floor}
+      | "L" => {coord: coord, position: Empty}
+      | "#" => {coord: coord, position: Occupied}
       | _ => raise(Not_found)
       }
     })
