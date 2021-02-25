@@ -22,9 +22,12 @@ let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitInde
 let splitSignValue = signValue => {
   let re = %re("/(\+|\-)([0-9]+)/")
   let result = Js.Re.exec_(re, signValue)
-
+  // split(" ");
+  // acc -7
+  // jmp +1
   switch result {
   | Some(r) => {
+      // "-7"->Belt.Int.fromString == Some(-7) | None
       let sign = Js.Nullable.toOption(Js.Re.captures(r)[1])
       let value =
         Js.Nullable.toOption(Js.Re.captures(r)[2])
@@ -32,18 +35,24 @@ let splitSignValue = signValue => {
         ->Belt.Int.fromString
         ->Belt.Option.getExn
 
+      // int_of_string
+      // ==
+      /*
+        ->Belt.Int.fromString
+        ->Belt.Option.getExn
+ */
       if sign == Some("-") {
         Some(-value)
       } else {
         Some(value)
       }
     }
-  | None => None
+  | None => raise(Not_found)
   }
 }
 
 let parse = (strs: array<string>): instructions_t => {
-  strs->Belt.Array.mapWithIndex((_, str) => {
+  strs->Belt.Array.map(str => {
     let line = str->Js.String2.split(" ")
     let (operator, signValue) = (line[0], line[1])
     let value = splitSignValue(signValue)->Belt.Option.getExn
@@ -73,6 +82,20 @@ let terminateCheck = (instructions, thisState: state_t): terminate_t => {
 let run = (instructions: instructions_t, thisState: state_t): state_t => {
   let terminateState = terminateCheck(instructions, thisState)
   let thisInstruction = instructions->Belt.Array.get(thisState.idx)
+  // let thisInstruction = instructions->Belt.Array.getExn(thisState.idx)
+  // switch terminateState {
+  // | OutOfIndex =>     {
+  //         ...thisState,
+  //         terminateState: terminateState,
+  //       }
+  //       | _ => {
+  //           let thisInstruction = instructions->Belt.Array.getExn(thisState.idx)
+  //           switch thisInstruction {
+  //             | Acc(value)
+  //             | ./...
+  //           }
+  //       }
+  // }
 
   switch thisInstruction {
   | None =>
