@@ -1,7 +1,7 @@
 type terminate_t =
-  | InfiniteLoop // infinite loop
-  | OutOfIndex // out of index
-  | NotYet // not terminated
+  | InfiniteLoop
+  | OutOfIndex
+  | NotTerminated
 
 type state_t = {
   idx: int,
@@ -17,45 +17,16 @@ type instruction_t =
 
 type instructions_t = array<instruction_t>
 
-let initialState: state_t = {idx: 0, value: 0, terminateState: NotYet, visitIndexes: list{}}
+let initialState: state_t = {idx: 0, value: 0, terminateState: NotTerminated, visitIndexes: list{}}
 
-let splitSignValue = signValue => {
-  let re = %re("/(\+|\-)([0-9]+)/")
-  let result = Js.Re.exec_(re, signValue)
-  // split(" ");
-  // acc -7
-  // jmp +1
-  switch result {
-  | Some(r) => {
-      // "-7"->Belt.Int.fromString == Some(-7) | None
-      let sign = Js.Nullable.toOption(Js.Re.captures(r)[1])
-      let value =
-        Js.Nullable.toOption(Js.Re.captures(r)[2])
-        ->Belt.Option.getExn
-        ->Belt.Int.fromString
-        ->Belt.Option.getExn
-
-      // int_of_string
-      // ==
-      /*
-        ->Belt.Int.fromString
-        ->Belt.Option.getExn
- */
-      if sign == Some("-") {
-        Some(-value)
-      } else {
-        Some(value)
-      }
-    }
-  | None => raise(Not_found)
-  }
-}
+let convertToSignedNumber = (signValue: string): int =>
+  signValue->Js.String2.split(" ")->Belt.Array.map(v => v->int_of_string)->Belt.Array.getExn(0)
 
 let parse = (strs: array<string>): instructions_t => {
   strs->Belt.Array.map(str => {
-    let line = str->Js.String2.split(" ")
-    let (operator, signValue) = (line[0], line[1])
-    let value = splitSignValue(signValue)->Belt.Option.getExn
+    let currentLine = str->Js.String2.split(" ")
+    let operator = currentLine[0]
+    let value = currentLine[1]->convertToSignedNumber
 
     switch operator {
     | "acc" => Acc(value)
@@ -66,62 +37,50 @@ let parse = (strs: array<string>): instructions_t => {
   })
 }
 
-let isVisited = (thisState): bool =>
+let isVisited = (thisState: state_t): bool =>
   thisState.visitIndexes->Belt.List.has(thisState.idx, (a, b) => a == b)
 
-let terminateCheck = (instructions, thisState: state_t): terminate_t => {
+let terminateCheck = (instructions: instructions_t, thisState: state_t): terminate_t => {
   if thisState->isVisited == true {
     InfiniteLoop
   } else if thisState.idx > instructions->Belt.Array.length - 1 {
     OutOfIndex
   } else {
-    NotYet
+    NotTerminated
   }
 }
 
 let run = (instructions: instructions_t, thisState: state_t): state_t => {
   let terminateState = terminateCheck(instructions, thisState)
   let thisInstruction = instructions->Belt.Array.get(thisState.idx)
-  // let thisInstruction = instructions->Belt.Array.getExn(thisState.idx)
-  // switch terminateState {
-  // | OutOfIndex =>     {
-  //         ...thisState,
-  //         terminateState: terminateState,
-  //       }
-  //       | _ => {
-  //           let thisInstruction = instructions->Belt.Array.getExn(thisState.idx)
-  //           switch thisInstruction {
-  //             | Acc(value)
-  //             | ./...
-  //           }
-  //       }
-  // }
 
-  switch thisInstruction {
-  | None =>
-    terminateState === OutOfIndex
-      ? {
-          ...thisState,
-          terminateState: terminateState,
-        }
-      : thisState
-  | Some(Acc(value)) => {
-      idx: thisState.idx + 1,
-      value: thisState.value + value,
-      terminateState: terminateState,
-      visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
-    }
-  | Some(Jmp(value)) => {
+  switch terminateState {
+  | InfiniteLoop
+  | OutOfIndex => {
       ...thisState,
-      idx: thisState.idx + value,
       terminateState: terminateState,
-      visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
     }
-  | Some(Nop) => {
-      ...thisState,
-      idx: thisState.idx + 1,
-      terminateState: terminateState,
-      visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+  | NotTerminated =>
+    switch thisInstruction {
+    | Some(Acc(value)) => {
+        idx: thisState.idx + 1,
+        value: thisState.value + value,
+        terminateState: terminateState,
+        visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+      }
+    | Some(Jmp(value)) => {
+        ...thisState,
+        idx: thisState.idx + value,
+        terminateState: terminateState,
+        visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+      }
+    | Some(Nop) => {
+        ...thisState,
+        idx: thisState.idx + 1,
+        terminateState: terminateState,
+        visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+      }
+    | _ => raise(Not_found)
     }
   }
 }
@@ -130,7 +89,7 @@ let rec execute = (instructions: instructions_t, thisState: state_t): state_t =>
   switch thisState.terminateState {
   | InfiniteLoop
   | OutOfIndex => thisState
-  | NotYet => {
+  | NotTerminated => {
       let newState = run(instructions, thisState)
       instructions->execute(newState)
     }
@@ -153,7 +112,7 @@ let makeCandidates = (instructions: instructions_t): array<instructions_t> => {
   })
 }
 
-let onlyOutOfIndexes = (resultStates: array<state_t>) => {
+let onlyTerminatedOutOfIndex = (resultStates: array<state_t>): array<state_t> => {
   resultStates->Belt.Array.keepMap(result => {
     switch result.terminateState {
     | OutOfIndex => Some(result)
@@ -163,17 +122,17 @@ let onlyOutOfIndexes = (resultStates: array<state_t>) => {
 }
 
 // Common
-let originalInstructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
+let instructions = Node.Fs.readFileAsUtf8Sync("./input.txt")->Js.String2.split("\n")->parse
 
 // Part 1
-let outP1 = originalInstructions->execute(initialState)
+let outP1 = instructions->execute(initialState)
 outP1.value->Js.log
 
 // Part 2
 let outP2 =
-  originalInstructions
+  instructions
   ->makeCandidates
   ->Belt.Array.map(candidate => candidate->execute(initialState))
-  ->onlyOutOfIndexes
+  ->onlyTerminatedOutOfIndex
 
 outP2[0].value->Js.log
