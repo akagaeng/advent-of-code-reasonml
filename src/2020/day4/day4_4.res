@@ -18,7 +18,7 @@ type raw_t = {
   hgt: string,
   hcl: string,
   ecl: string,
-  pid: string, // NOT int: case where pid starts with 0 (ex: pid:085002665)
+  pid: string,
   cid: option<string>,
 }
 
@@ -31,7 +31,7 @@ type passport_t = {
   hgt: string,
   hcl: string,
   ecl: string,
-  pid: string, // NOT int: case where pid starts with 0 (ex: pid:085002665)
+  pid: string,
   cid: option<string>,
 }
 
@@ -71,11 +71,10 @@ let regexFilter = (val: string, regexp) => {
 let optStrToInt = optStr => optStr->Belt.Int.fromString->Belt.Option.getExn
 
 let parseRaws = (inputs): raws_t => {
-  let getIntValue = (dict, key) => dict->Belt.Map.String.getExn(key)->optStrToInt
   let getStrValue = (dict, key: string): string => dict->Belt.Map.String.getExn(key)
   let getOptValue = (dict, key) => dict->Belt.Map.String.get(key)
 
-  inputs->Belt.Array.keepMap(input => {
+  inputs->Belt.Array.keepMap((input): option<raw_t> => {
     try {
       Some({
         byr: input->getStrValue("byr"),
@@ -95,21 +94,31 @@ let parseRaws = (inputs): raws_t => {
 }
 
 let parsePassports = (raws: raws_t): passports_t =>
-  raws
-  ->Belt.Array.keepMap((raw: raw_t) => {
+  raws->Belt.Array.keepMap((raw: raw_t): option<passport_t> => {
+    let passport = {
+      byr: raw.byr->optStrToInt,
+      iyr: raw.iyr->optStrToInt,
+      eyr: raw.eyr->optStrToInt,
+      hgt: raw.hgt,
+      hcl: raw.hcl,
+      ecl: raw.ecl,
+      pid: raw.pid,
+      cid: raw.cid,
+    }
+
     let isValidated =
       [
-        raw.byr->optStrToInt->rangeFilter((1920, 2002)),
-        raw.iyr->optStrToInt->rangeFilter((2010, 2020)),
-        raw.eyr->optStrToInt->rangeFilter((2020, 2030)),
-        raw.hgt->hgtFilter((150, 193, 59, 76)),
-        raw.hcl->regexFilter(%re("/(#)[0-9a-f]{6}/")),
-        raw.ecl->regexFilter(%re("/(amb|blu|brn|gry|grn|hzl|oth)/")),
-        raw.pid->regexFilter(%re("/[0-9]{9}/")),
+        passport.byr->rangeFilter((1920, 2002)),
+        passport.iyr->rangeFilter((2010, 2020)),
+        passport.eyr->rangeFilter((2020, 2030)),
+        passport.hgt->hgtFilter((150, 193, 59, 76)),
+        passport.hcl->regexFilter(%re("/(#)[0-9a-f]{6}/")),
+        passport.ecl->regexFilter(%re("/(amb|blu|brn|gry|grn|hzl|oth)/")),
+        passport.pid->regexFilter(%re("/[0-9]{9}/")),
       ]->Belt.Array.every(x => x === true)
 
     switch isValidated {
-    | true => Some(raw)
+    | true => Some(passport)
     | _ => None
     }
   })
