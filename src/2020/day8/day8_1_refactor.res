@@ -66,19 +66,19 @@ let run = (instructions: instructions_t, thisState: state_t): state_t => {
         idx: thisState.idx + 1,
         value: thisState.value + value,
         terminateState: terminateState,
-        visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+        visitIndexes: list{thisState.idx, ...thisState.visitIndexes},
       }
     | Some(Jmp(value)) => {
         ...thisState,
         idx: thisState.idx + value,
         terminateState: terminateState,
-        visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+        visitIndexes: list{thisState.idx, ...thisState.visitIndexes},
       }
     | Some(Nop) => {
         ...thisState,
         idx: thisState.idx + 1,
         terminateState: terminateState,
-        visitIndexes: thisState.visitIndexes->Belt.List.add(thisState.idx),
+        visitIndexes: list{thisState.idx, ...thisState.visitIndexes},
       }
     | _ => raise(Not_found)
     }
