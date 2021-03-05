@@ -11,8 +11,6 @@ let inputs =
     ->Belt.Map.String.fromArray
   })
 
-let fields = ["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid", "cid"]
-
 type passport_t = {
   byr: int,
   iyr: int,
