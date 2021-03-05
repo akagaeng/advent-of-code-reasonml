@@ -38,7 +38,7 @@ let parse = (strs: array<string>): instructions_t => {
 }
 
 let isVisited = (thisState: state_t): bool =>
-  thisState.visitIndexes->Belt.List.has(thisState.idx, (a, b) => a == b)
+  thisState.visitIndexes->Belt.List.some(visitIndex => visitIndex == thisState.idx)
 
 let terminateCheck = (instructions: instructions_t, thisState: state_t): terminate_t => {
   if thisState->isVisited == true {
