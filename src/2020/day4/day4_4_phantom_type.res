@@ -63,7 +63,7 @@ let parsePassportsRaw = (inputs): array<passport_t<unvalidated>> => {
   let optStrToInt = optStr => optStr->Belt.Int.fromString->Belt.Option.getExn
   let getIntValue = (dict, key) => dict->Belt.Map.String.getExn(key)->optStrToInt
   let getStrValue = (dict, key) => dict->Belt.Map.String.getExn(key)
-  let getOptValue = (dict, key) => dict->Belt.Map.String.getWithDefault("", key)
+  let getOptValue = (dict, key) => dict->Belt.Map.String.get(key)
 
   inputs->Belt.Array.keepMap(input => {
     try {
@@ -75,7 +75,7 @@ let parsePassportsRaw = (inputs): array<passport_t<unvalidated>> => {
         hcl: input->getStrValue("hcl"),
         ecl: input->getStrValue("ecl"),
         pid: input->getStrValue("pid"),
-        cid: Some(input->getOptValue("cid")),
+        cid: input->getOptValue("cid"),
       })
     } catch {
     | Not_found => None
