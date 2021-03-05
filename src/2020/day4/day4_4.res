@@ -11,6 +11,19 @@ let inputs =
     ->Belt.Map.String.fromArray
   })
 
+type raw_t = {
+  byr: string,
+  iyr: string,
+  eyr: string,
+  hgt: string,
+  hcl: string,
+  ecl: string,
+  pid: string, // NOT int: case where pid starts with 0 (ex: pid:085002665)
+  cid: option<string>,
+}
+
+type raws_t = array<raw_t>
+
 type passport_t = {
   byr: int,
   iyr: int,
@@ -24,9 +37,9 @@ type passport_t = {
 
 type passports_t = array<passport_t>
 
-let rangeFilter = ((val, min, max)) => val > min - 1 && val < max + 1
+let rangeFilter = (val, (min, max)) => val > min - 1 && val < max + 1
 
-let hgtFilter = ((val, cmMin, cmMax, inMin, inMax)) => {
+let hgtFilter = (val, (cmMin, cmMax, inMin, inMax)) => {
   switch val {
   | "" => false
   | _ => {
@@ -39,15 +52,15 @@ let hgtFilter = ((val, cmMin, cmMax, inMin, inMax)) => {
       let unit = Js.String2.splitByRe(val, %re("/[0-9]+/"))[1]->Belt.Option.getExn
 
       switch unit {
-      | "cm" => rangeFilter((num, cmMin, cmMax))
-      | "in" => rangeFilter((num, inMin, inMax))
+      | "cm" => num->rangeFilter((cmMin, cmMax))
+      | "in" => num->rangeFilter((inMin, inMax))
       | _ => false
       }
     }
   }
 }
 
-let regexFilter = ((val: string, regexp)) => {
+let regexFilter = (val: string, regexp) => {
   let matched = Js.String2.match_(val, regexp)
   switch matched {
   | Some(m) => m[0] === val
@@ -55,23 +68,24 @@ let regexFilter = ((val: string, regexp)) => {
   }
 }
 
-let parsePassportsRaw = (inputs): passports_t => {
-  let optStrToInt = optStr => optStr->Belt.Int.fromString->Belt.Option.getExn
+let optStrToInt = optStr => optStr->Belt.Int.fromString->Belt.Option.getExn
+
+let parseRaws = (inputs): raws_t => {
   let getIntValue = (dict, key) => dict->Belt.Map.String.getExn(key)->optStrToInt
-  let getStrValue = (dict, key) => dict->Belt.Map.String.getExn(key)
-  let getOptValue = (dict, key) => dict->Belt.Map.String.getWithDefault("", key)
+  let getStrValue = (dict, key: string): string => dict->Belt.Map.String.getExn(key)
+  let getOptValue = (dict, key) => dict->Belt.Map.String.get(key)
 
   inputs->Belt.Array.keepMap(input => {
     try {
       Some({
-        byr: input->getIntValue("byr"),
-        iyr: input->getIntValue("iyr"),
-        eyr: input->getIntValue("eyr"),
+        byr: input->getStrValue("byr"),
+        iyr: input->getStrValue("iyr"),
+        eyr: input->getStrValue("eyr"),
         hgt: input->getStrValue("hgt"),
         hcl: input->getStrValue("hcl"),
         ecl: input->getStrValue("ecl"),
         pid: input->getStrValue("pid"),
-        cid: Some(input->getOptValue("cid")),
+        cid: input->getOptValue("cid"),
       })
     } catch {
     | Not_found => None
@@ -80,28 +94,32 @@ let parsePassportsRaw = (inputs): passports_t => {
   })
 }
 
-let parsePassports = (passports: passports_t): passports_t => {
-  passports->Belt.Array.keepMap(passport => {
+let parsePassports = (raws: raws_t): passports_t =>
+  raws
+  ->Belt.Array.keepMap((raw: raw_t) => {
     let isValidated =
       [
-        rangeFilter((passport.byr, 1920, 2002)),
-        rangeFilter((passport.iyr, 2010, 2020)),
-        rangeFilter((passport.eyr, 2020, 2030)),
-        hgtFilter((passport.hgt, 150, 193, 59, 76)),
-        regexFilter((passport.hcl, %re("/(#)[0-9a-f]{6}/"))),
-        regexFilter((passport.ecl, %re("/(amb|blu|brn|gry|grn|hzl|oth)/"))),
-        regexFilter((passport.pid, %re("/[0-9]{9}/"))),
+        raw.byr->optStrToInt->rangeFilter((1920, 2002)),
+        raw.iyr->optStrToInt->rangeFilter((2010, 2020)),
+        raw.eyr->optStrToInt->rangeFilter((2020, 2030)),
+        raw.hgt->hgtFilter((150, 193, 59, 76)),
+        raw.hcl->regexFilter(%re("/(#)[0-9a-f]{6}/")),
+        raw.ecl->regexFilter(%re("/(amb|blu|brn|gry|grn|hzl|oth)/")),
+        raw.pid->regexFilter(%re("/[0-9]{9}/")),
       ]->Belt.Array.every(x => x === true)
 
     switch isValidated {
-    | true => Some(passport)
+    | true => Some(raw)
     | _ => None
     }
   })
-}
+
+let countRaw: raws_t => int = a => a->Belt.Array.length
+
+let countPassports: passports_t => int = a => a->Belt.Array.length
 
 // Part One - refactored
-inputs->parsePassportsRaw->Belt.Array.length->Js.log
+inputs->parseRaws->countRaw->Js.log
 
 // Part two - refactored
-inputs->parsePassportsRaw->parsePassports->Belt.Array.length->Js.log
+inputs->parseRaws->parsePassports->countPassports->Js.log
