@@ -103,13 +103,15 @@ let makeCandidates = (instructions: instructions_t): array<instructions_t> => {
     newInstructions
   }
 
-  instructions->Belt.Array.reduceWithIndex([], (acc, x, i) => {
-    switch x {
-    | Jmp(_) => acc->Belt.Array.concat([instructions->swap(i, Nop)])
-    | Nop => acc->Belt.Array.concat([instructions->swap(i, Jmp(i))])
-    | _ => acc
+  instructions
+  ->Belt.Array.mapWithIndex((i, instruction) => {
+    switch instruction {
+    | Jmp(_) => Some(instructions->swap(i, Nop))
+    | Nop => Some(instructions->swap(i, Jmp(i)))
+    | _ => None
     }
   })
+  ->Belt.Array.keepMap(instr => instr)
 }
 
 let onlyTerminatedOutOfIndex = (resultStates: array<state_t>): array<state_t> => {
@@ -136,3 +138,5 @@ let outP2 =
   ->onlyTerminatedOutOfIndex
 
 outP2[0].value->Js.log
+
+// outP2->Js.log
