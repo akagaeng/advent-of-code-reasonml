@@ -131,9 +131,7 @@ let countRaw: raws_t => int = a => a->Belt.Array.length
 let countPassports: passports_t => int = a => a->Belt.Array.length
 
 // Part One - refactored
-let rawPassport: raws_t = inputs->parseRaws
-rawPassport->countRaw->Js.log
+inputs->parseRaws->countRaw->Js.log
 
 // Part two - refactored
-let passports: passports_t = inputs->parseRaws->parsePassports
-passports->countPassports->Js.log
+inputs->parseRaws->parsePassports->countPassports->Js.log
