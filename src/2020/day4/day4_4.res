@@ -74,9 +74,9 @@ let parseRaws = (inputs): raws_t => {
   let getStrValue = (dict, key: string): string => dict->Belt.Map.String.getExn(key)
   let getOptValue = (dict, key) => dict->Belt.Map.String.get(key)
 
-  inputs->Belt.Array.keepMap((input): option<raw_t> => {
+  inputs->Belt.Array.keepMap(input => {
     try {
-      Some({
+      let rasPassport: raw_t = {
         byr: input->getStrValue("byr"),
         iyr: input->getStrValue("iyr"),
         eyr: input->getStrValue("eyr"),
@@ -85,7 +85,9 @@ let parseRaws = (inputs): raws_t => {
         ecl: input->getStrValue("ecl"),
         pid: input->getStrValue("pid"),
         cid: input->getOptValue("cid"),
-      })
+      }
+
+      Some(rasPassport)
     } catch {
     | Not_found => None
     | _ => None
@@ -93,9 +95,9 @@ let parseRaws = (inputs): raws_t => {
   })
 }
 
-let parsePassports = (raws: raws_t): passports_t =>
-  raws->Belt.Array.keepMap((raw: raw_t): option<passport_t> => {
-    let passport = {
+let parsePassports = (raws: raws_t): passports_t => {
+  raws->Belt.Array.keepMap(raw => {
+    let passport: passport_t = {
       byr: raw.byr->optStrToInt,
       iyr: raw.iyr->optStrToInt,
       eyr: raw.eyr->optStrToInt,
@@ -122,13 +124,16 @@ let parsePassports = (raws: raws_t): passports_t =>
     | _ => None
     }
   })
+}
 
 let countRaw: raws_t => int = a => a->Belt.Array.length
 
 let countPassports: passports_t => int = a => a->Belt.Array.length
 
 // Part One - refactored
-inputs->parseRaws->countRaw->Js.log
+let rawPassport: raws_t = inputs->parseRaws
+rawPassport->countRaw->Js.log
 
 // Part two - refactored
-inputs->parseRaws->parsePassports->countPassports->Js.log
+let passports: passports_t = inputs->parseRaws->parsePassports
+passports->countPassports->Js.log
