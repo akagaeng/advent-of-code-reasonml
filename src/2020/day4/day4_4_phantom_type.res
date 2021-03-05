@@ -28,9 +28,9 @@ type passport_t<'a> = {
 
 type passports_t = array<passport_t<validated>>
 
-let rangeFilter = ((val, min, max)) => val > min - 1 && val < max + 1
+let rangeFilter = (val, (min, max)) => val > min - 1 && val < max + 1
 
-let hgtFilter = ((val, cmMin, cmMax, inMin, inMax)) => {
+let hgtFilter = (val, (cmMin, cmMax, inMin, inMax)) => {
   switch val {
   | "" => false
   | _ => {
@@ -43,15 +43,15 @@ let hgtFilter = ((val, cmMin, cmMax, inMin, inMax)) => {
       let unit = Js.String2.splitByRe(val, %re("/[0-9]+/"))[1]->Belt.Option.getExn
 
       switch unit {
-      | "cm" => rangeFilter((num, cmMin, cmMax))
-      | "in" => rangeFilter((num, inMin, inMax))
+      | "cm" => num->rangeFilter((cmMin, cmMax))
+      | "in" => num->rangeFilter((inMin, inMax))
       | _ => false
       }
     }
   }
 }
 
-let regexFilter = ((val: string, regexp)) => {
+let regexFilter = (val: string, regexp) => {
   let matched = Js.String2.match_(val, regexp)
   switch matched {
   | Some(m) => m[0] === val
@@ -88,13 +88,13 @@ let parsePassports = (passports: array<passport_t<unvalidated>>): array<passport
   passports->Belt.Array.keepMap(passport => {
     let isValidated =
       [
-        rangeFilter((passport.byr, 1920, 2002)),
-        rangeFilter((passport.iyr, 2010, 2020)),
-        rangeFilter((passport.eyr, 2020, 2030)),
-        hgtFilter((passport.hgt, 150, 193, 59, 76)),
-        regexFilter((passport.hcl, %re("/(#)[0-9a-f]{6}/"))),
-        regexFilter((passport.ecl, %re("/(amb|blu|brn|gry|grn|hzl|oth)/"))),
-        regexFilter((passport.pid, %re("/[0-9]{9}/"))),
+        passport.byr->rangeFilter((1920, 2002)),
+        passport.iyr->rangeFilter((2010, 2020)),
+        passport.eyr->rangeFilter((2020, 2030)),
+        passport.hgt->hgtFilter((150, 193, 59, 76)),
+        passport.hcl->regexFilter(%re("/(#)[0-9a-f]{6}/")),
+        passport.ecl->regexFilter(%re("/(amb|blu|brn|gry|grn|hzl|oth)/")),
+        passport.pid->regexFilter(%re("/[0-9]{9}/")),
       ]->Belt.Array.every(x => x === true)
 
     switch isValidated {
