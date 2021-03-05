@@ -159,4 +159,5 @@ let p1Passports = data->parseP1
 p1Passports->Belt.Array.length->Js.log
 
 // Part two
-let p2Passports = data->parseP1->parseP2->Belt.Array.length->Js.log
+let p2Passports = data->parseP1->parseP2
+p2Passports->Belt.Array.length->Js.log
