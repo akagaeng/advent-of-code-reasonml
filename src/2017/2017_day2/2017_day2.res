@@ -33,7 +33,7 @@ let getDivChecksum = (spreadsheet: spreadsheet): divChecksums => {
         let remainder = mod(colA, colB)
         let quotient = colA / colB
 
-        switch remainder == 0 && quotient !== 1 {
+        switch remainder === 0 && quotient !== 1 {
         | true => Some(quotient)
         | false => None
         }
