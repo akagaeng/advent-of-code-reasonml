@@ -42,10 +42,12 @@ let rec findMatch = (digits: digits, state: state, gap: gap): state => {
 
 let sum = (state: state): captcha => state.captcha
 
-let halfway = (digits: digits) => digits->Belt.Array.length / 2
+let nextDigitGap = 1
+
+let halfwayGap = (digits: digits) => digits->Belt.Array.length / 2
 
 // part 1
-digits->findMatch(initState, 1)->sum->Js.log
+digits->findMatch(initState, nextDigitGap)->sum->Js.log
 
 // part 2
-digits->findMatch(initState, digits->halfway)->sum->Js.log
+digits->findMatch(initState, digits->halfwayGap)->sum->Js.log
