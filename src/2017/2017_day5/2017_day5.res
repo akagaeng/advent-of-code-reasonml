@@ -2,6 +2,10 @@ type instruction =
   | Stopped
   | Jump(int) // Forward + Backward
 
+type rule =
+  | Part1
+  | Part2
+
 type instructions = array<instruction>
 
 type state = {idx: int, steps: int}
@@ -25,11 +29,12 @@ let parse = (inputs): instructions => {
 let initialInstructions = inputs->parse
 
 let updateOffset = (instructions: instructions, idx: int, instruction: instruction) => {
-  let _setValue = instructions->Belt.Array.set(idx, instruction)
-  instructions
+  let newInstructions = instructions->Belt.Array.copy
+  let _setValue = newInstructions->Belt.Array.set(idx, instruction)
+  newInstructions
 }
 
-let move = (instructions: instructions, state: state) => {
+let moveP1 = (instructions: instructions, state: state) => {
   let thisIdx = state.idx
   let thisInstruction = instructions[thisIdx]
 
@@ -54,21 +59,65 @@ let move = (instructions: instructions, state: state) => {
   }
 }
 
-let rec check = (instructions: instructions, state: state) => {
+let moveP2 = (instructions: instructions, state: state) => {
+  let thisIdx = state.idx
+  let thisInstruction = instructions[thisIdx]
+
+  switch thisInstruction {
+  | Stopped => {
+      let newInstructions = instructions->updateOffset(thisIdx, Jump(1))
+      (newInstructions, {idx: thisIdx, steps: state.steps + 1})
+    }
+  | Jump(offset) =>
+    if offset >= 3 {
+      switch thisIdx + 1 {
+      | 0 => {
+          // Jump -> Stopped
+          let newInstructions = instructions->updateOffset(thisIdx, Stopped)
+          (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
+        }
+      | _ => {
+          // Jump -> Jump
+          let newInstructions = instructions->updateOffset(thisIdx, Jump(offset - 1))
+          (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
+        }
+      }
+    } else {
+      switch thisIdx + 1 {
+      | 0 => {
+          // Jump -> Stopped
+          let newInstructions = instructions->updateOffset(thisIdx, Stopped)
+          (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
+        }
+      | _ => {
+          // Jump -> Jump
+          let newInstructions = instructions->updateOffset(thisIdx, Jump(offset + 1))
+          (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
+        }
+      }
+    }
+  }
+}
+
+let rec check = (instructions: instructions, state: state, rule: rule) => {
   switch state.idx < instructions->Belt.Array.length {
-  | true => {
-      let (newInstructions, thisState) = instructions->move(state)
-      newInstructions->check(thisState)
+  | true =>
+    switch rule {
+    | Part1 => {
+        let (newInstructions, thisState) = instructions->moveP1(state)
+        newInstructions->check(thisState, Part1)
+      }
+    | Part2 => {
+        let (newInstructions, thisState) = instructions->moveP2(state)
+        newInstructions->check(thisState, Part2)
+      }
     }
   | false => state
   }
 }
 
 // Part 1
-initialInstructions->check(initialState)->Js.log
+initialInstructions->check(initialState, Part1)->Js.log
 
-/*
-Instructions
-- The goal is to follow the jumps until one leads outside the list.
-- after each jump, the offset of that instruction increases by 1
-*/
+// Part 2
+initialInstructions->check(initialState, Part2)->Js.log
