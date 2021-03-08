@@ -20,7 +20,7 @@ let sortInt = (spreadsheet: spreadsheet) =>
 
 let getDiffChecksum = (spreadsheet: spreadsheet): diffChecksums =>
   spreadsheet->Belt.Array.map(cols => {
-    let (min, max) = (cols[0], cols[cols->Belt.Array.length - 1])
+    let (min, max) = (cols->CmpUtil.getMin, cols->CmpUtil.getMax)
     max - min
   })
 
