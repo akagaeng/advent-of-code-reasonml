@@ -11,7 +11,7 @@ type state = {idx: int, steps: int}
 let initialState = {idx: 0, steps: 0}
 
 let initialInstructions =
-  Node.Fs.readFileAsUtf8Sync("./input.txt")
+  Node.Fs.readFileAsUtf8Sync("./sample.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.map(v => v->int_of_string)
 
@@ -25,13 +25,12 @@ let move = (instructions: instructions, state: state, rule: rule) => {
   let thisIdx = state.idx
   let offset = instructions[thisIdx]
 
-  if offset >= 3 && rule === Part2 {
-    let newInstructions = instructions->updateOffset(thisIdx, offset - 1)
-    (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
+  let newInstructions = if offset >= 3 && rule === Part2 {
+    instructions->updateOffset(thisIdx, offset - 1)
   } else {
-    let newInstructions = instructions->updateOffset(thisIdx, offset + 1)
-    (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
+    instructions->updateOffset(thisIdx, offset + 1)
   }
+  (newInstructions, {idx: thisIdx + offset, steps: state.steps + 1})
 }
 
 let rec check = (instructions: instructions, state: state, rule: rule) => {
