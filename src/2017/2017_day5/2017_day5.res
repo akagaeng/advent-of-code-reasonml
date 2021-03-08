@@ -17,22 +17,22 @@ let run = (instructions: instructions, idx: int, instruction: instruction) => {
   newInstructions
 }
 
-let move = (state: state, offsetUpdater) => {
+let move = (offsetUpdater, state: state) => {
   idx: state.idx + state.instructions[state.idx],
   steps: state.steps + 1,
   instructions: state.instructions->offsetUpdater(state),
 }
 
-let rec check = (state: state, offsetUpdater) => {
+let rec check = (offsetUpdater, state: state) => {
   switch state.idx < state.instructions->Belt.Array.length {
-  | true => check(move(state, offsetUpdater), offsetUpdater)
+  | true => check(offsetUpdater, move(offsetUpdater, state))
   | false => state
   }
 }
 
 let offsetUpdaterPart1 = (instructions, state): instructions => {
   let offset = instructions[state.idx]
-  instructions->run(state.idx, offset + 1)
+  state.instructions->run(state.idx, offset + 1)
 }
 
 let offsetUpdaterPart2 = (instructions, state): instructions => {
@@ -46,7 +46,7 @@ let offsetUpdaterPart2 = (instructions, state): instructions => {
 let getSteps = (state: state): int => state.steps
 
 // Part 1
-check(initialState, offsetUpdaterPart1)->getSteps->Js.log
+check(offsetUpdaterPart1, initialState)->getSteps->Js.log
 
 // Part 2
-check(initialState, offsetUpdaterPart2)->getSteps->Js.log
+check(offsetUpdaterPart2, initialState)->getSteps->Js.log
