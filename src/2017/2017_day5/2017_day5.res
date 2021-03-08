@@ -2,14 +2,14 @@ type instruction = int
 
 type instructions = array<instruction>
 
-type state = {idx: int, steps: int}
-
-let initialState = {idx: 0, steps: 0}
+type state = {idx: int, steps: int, instructions: instructions}
 
 let initialInstructions =
   Node.Fs.readFileAsUtf8Sync("./input.txt")
   ->Js.String2.split("\n")
   ->Belt.Array.map(v => v->int_of_string)
+
+let initialState = {idx: 0, steps: 0, instructions: initialInstructions}
 
 let run = (instructions: instructions, idx: int, instruction: instruction) => {
   let newInstructions = instructions->Belt.Array.copy
@@ -17,17 +17,15 @@ let run = (instructions: instructions, idx: int, instruction: instruction) => {
   newInstructions
 }
 
-let move = (instructions: instructions, state: state, offsetUpdater) => {
-  let offset = instructions[state.idx]
-  (instructions->offsetUpdater(state), {idx: state.idx + offset, steps: state.steps + 1})
+let move = (state: state, offsetUpdater) => {
+  idx: state.idx + state.instructions[state.idx],
+  steps: state.steps + 1,
+  instructions: state.instructions->offsetUpdater(state),
 }
 
-let rec check = (instructions: instructions, state: state, offsetUpdater) => {
-  switch state.idx < instructions->Belt.Array.length {
-  | true => {
-      let (newInstructions, thisState) = instructions->move(state, offsetUpdater)
-      newInstructions->check(thisState, offsetUpdater)
-    }
+let rec check = (state: state, offsetUpdater) => {
+  switch state.idx < state.instructions->Belt.Array.length {
+  | true => check(move(state, offsetUpdater), offsetUpdater)
   | false => state
   }
 }
@@ -48,7 +46,7 @@ let offsetUpdaterPart2 = (instructions, state): instructions => {
 let getSteps = (state: state): int => state.steps
 
 // Part 1
-initialInstructions->check(initialState, offsetUpdaterPart1)->getSteps->Js.log
+check(initialState, offsetUpdaterPart1)->getSteps->Js.log
 
 // Part 2
-initialInstructions->check(initialState, offsetUpdaterPart2)->getSteps->Js.log
+check(initialState, offsetUpdaterPart2)->getSteps->Js.log
