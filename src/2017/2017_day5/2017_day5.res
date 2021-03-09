@@ -23,13 +23,6 @@ let move = (offsetUpdater, state: state): state => {
   instructions: offsetUpdater(state),
 }
 
-let check = (isTerminated, next, state: state) => {
-  let rec run = state => {
-    state->isTerminated ? state : run(state->next)
-  }
-  run(state)
-}
-
 let offsetUpdaterPart1 = (state: state): instructions => {
   let offset = state.instructions[state.idx]
   state->makeInstructions(state.idx, offset + 1)
@@ -47,7 +40,7 @@ let getSteps = (state: state): int => state.steps
 
 let isTerminated = (state): bool => state.idx >= state.instructions->Belt.Array.length
 
-let terminateCheck = check(isTerminated)
+let terminateCheck = Checker.check(isTerminated)
 
 let p1move = move(offsetUpdaterPart1)
 let p2move = move(offsetUpdaterPart2)
