@@ -11,42 +11,52 @@ let initialInstructions =
 
 let initialState = {idx: 0, steps: 0, instructions: initialInstructions}
 
-let run = (instructions: instructions, idx: int, instruction: instruction) => {
-  let newInstructions = instructions->Belt.Array.copy
+let makeInstructions = (state: state, idx: int, instruction: instruction) => {
+  let newInstructions = state.instructions->Belt.Array.copy
   let _setValue = newInstructions->Belt.Array.set(idx, instruction)
   newInstructions
 }
 
-let move = (offsetUpdater, state: state) => {
+let move = (offsetUpdater, state: state): state => {
   idx: state.idx + state.instructions[state.idx],
   steps: state.steps + 1,
-  instructions: state.instructions->offsetUpdater(state),
+  instructions: offsetUpdater(state),
 }
 
-let rec check = (offsetUpdater, state: state) => {
-  switch state.idx < state.instructions->Belt.Array.length {
-  | true => check(offsetUpdater, move(offsetUpdater, state))
-  | false => state
+let check = (isTerminated, next, state: state) => {
+  let rec run = state => {
+    state->isTerminated ? state : run(state->next)
   }
+  run(state)
 }
 
-let offsetUpdaterPart1 = (instructions, state): instructions => {
-  let offset = instructions[state.idx]
-  state.instructions->run(state.idx, offset + 1)
+let offsetUpdaterPart1 = (state: state): instructions => {
+  let offset = state.instructions[state.idx]
+  state->makeInstructions(state.idx, offset + 1)
 }
 
-let offsetUpdaterPart2 = (instructions, state): instructions => {
-  let offset = instructions[state.idx]
+let offsetUpdaterPart2 = (state: state): instructions => {
+  let offset = state.instructions[state.idx]
   switch offset >= 3 {
-  | true => instructions->run(state.idx, offset - 1)
-  | false => instructions->run(state.idx, offset + 1)
+  | true => state->makeInstructions(state.idx, offset - 1)
+  | false => state->makeInstructions(state.idx, offset + 1)
   }
 }
 
 let getSteps = (state: state): int => state.steps
 
+let isTerminated = (state): bool => state.idx >= state.instructions->Belt.Array.length
+
+let terminateCheck = check(isTerminated)
+
+let p1move = move(offsetUpdaterPart1)
+let p2move = move(offsetUpdaterPart2)
+
+let p1check = terminateCheck(p1move)
+let p2check = terminateCheck(p2move)
+
 // Part 1
-check(offsetUpdaterPart1, initialState)->getSteps->Js.log
+p1check(initialState)->getSteps->Js.log
 
 // Part 2
-check(offsetUpdaterPart2, initialState)->getSteps->Js.log
+p2check(initialState)->getSteps->Js.log
