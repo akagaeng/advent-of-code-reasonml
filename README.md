@@ -30,7 +30,6 @@ npx nodemon solution.bs.js
 ## Progress
 
 ### 2020
-https://github.com/akagaeng/advent-of-code-rescript/blob/clean-up/src/2020/2020_day1/2020_day1_1.res
 
 * Day1: [Solution](./src/2020/2020_day1/2020_day1_1.res) [Solution2](./src/2020/2020_day1/2020_day1_2.res) [Solution3](./src/2020/2020_day1/2020_day1_3.res) [Solution4](./src/2020/2020_day1/2020_day1_4.res) [Solution5](./src/2020/2020_day1/2020_day1_5.res)
 * Day2: [Solution1](./src/2020/2020_day2/2020_day2_1.res)
