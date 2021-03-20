@@ -53,3 +53,5 @@ https://github.com/akagaeng/advent-of-code-rescript/blob/clean-up/src/2020/2020_
 
 ### References
 * [Advent Of Code 2020](https://adventofcode.com/2020)
+* [Advent Of Code 2017](https://adventofcode.com/2017)
+* [Advent Of Code 2018](https://adventofcode.com/2018)
