@@ -5,10 +5,6 @@ let colCodeLen = 3
 let colLen = 8 // 2^3
 let binSeatsColSet = ["000", "001", "010", "011", "100", "101", "110", "111"]
 
-// TODO:
-// seat, airplane
-// matrix
-// row col을 레코드로?
 module StrCmp = Belt.Id.MakeComparable({
   type t = string
   let cmp = Pervasives.compare
@@ -72,13 +68,8 @@ let binSeatToRowAndCol = binSeat => {
   (row, col)
 }
 
-// TODO:
-// Js.Dict -> Belt.Map.String
-// Belt.Map.String
-// https://rescript-lang.org/docs/manual/latest/api/belt/map-string#set
 let arrayToJson = arr => {
   arr->Belt.Array.reduce(Js.Dict.empty(), (acc, (key, val)) => {
-    // row: key, col: val
     let keyExists = Js.Dict.get(acc, key)
 
     switch keyExists {
