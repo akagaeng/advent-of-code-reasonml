@@ -9,7 +9,7 @@ let parse = (input): frequencies =>
 
 let frequencies = input->parse
 
-let initState = {idx: 0, frequencies: frequencies, acc: 0, reached: list{}}
+let initState = {idx: 0, frequencies, acc: 0, reached: list{}}
 
 let next = (normalize, state): state => {
   let thisIdx = state.idx
